@@ -1,0 +1,9 @@
+google-play-scraper==1.2.7
+pandas>=2.0
+pandas>=2.2
+plotly>=5.24
+python-dateutil>=2.9
+scrapling[all]==0.5.1
+streamlit==1.67.0
+tzdata>=2024.1
+XlsxWriter>=3.2,<4
