@@ -4,36 +4,45 @@ from functools import lru_cache
 from pathlib import Path
 import sys
 
-from workspace_app.publications import collect
-
 ROOT = Path(__file__).resolve().parents[1]
 LABELS = {
+    "google_scholar": "Google Scholar",
     "news": "Berita", "gmaps": "Google Maps", "instagram": "Instagram",
     "playstore": "Play Store", "saham": "Saham", "threads": "Threads",
     "x": "X / Twitter", "youtube": "YouTube",
-    "scholar": "Google Scholar", "openalex": "OpenAlex",
 }
 FOLDERS = {
     "news": "news-scraper", "gmaps": "gmaps-reviews-scraper",
     "instagram": "instagram-scraper", "playstore": "playstore-reviews-scraper",
     "saham": "saham-scraper", "threads": "threads-scraper",
     "x": "x-tweet-scraper", "youtube": "youtube-comments-scraper",
-    "scholar": "scholar-scraper", "openalex": "openalex-scraper",
 }
-PUBLICATIONS = {"scholar": "scholar.py", "openalex": "client.py"}
 PROFILES = {"gmaps", "instagram", "threads", "x"}
+ARCHIVE_LABELS = {"scholar": "Google Scholar (arsip)", "openalex": "OpenAlex (arsip)"}
+OTHER_LABELS = {**ARCHIVE_LABELS, "preprocessing": "Preprocessing", "gabungan": "Gabungan"}
+
+
+def label(source):
+    return LABELS.get(source) or OTHER_LABELS.get(source, source)
+
+
+# Google Maps keeps an isolated browser profile but offers no Google login.
+LOGINS = PROFILES - {"gmaps"}
 FUNCTIONS = {
+    "google_scholar": "collect",
     "news": "run_scrape", "gmaps": "scrape_reviews", "instagram": "scrape_content",
     "playstore": "scrape_reviews", "saham": "scrape_prices", "threads": "scrape_posts",
     "x": "scrape_tweets", "youtube": "scrape_comments",
-    "scholar": "fetch_profile", "openalex": "fetch_profile",
 }
 
 
 @lru_cache
 def load(source):
+    if source == "google_scholar":
+        from workspace_app import scholar
+        return scholar
     folder = ROOT / FOLDERS[source]
-    path = folder / ("scraper/__init__.py" if source == "news" else PUBLICATIONS.get(source, "scraper.py"))
+    path = folder / ("scraper/__init__.py" if source == "news" else "scraper.py")
     name = f"_workspace_scraper_{source}"
     options = {"submodule_search_locations": [str(path.parent)]} if source == "news" else {}
     spec = importlib.util.spec_from_file_location(name, path, **options)
@@ -52,10 +61,10 @@ def load(source):
     return module
 
 
-def execute(source, params, profile, stop, log, checkpoint, *, documents=()):
+def execute(source, params, profile, stop, log, checkpoint):
     module = load(source)
-    if source in PUBLICATIONS:
-        return collect(source, module, params, documents, stop, log, checkpoint)
+    if source == "google_scholar":
+        return module.collect(params, stop, log, checkpoint)
     options = dict(params)
     function = FUNCTIONS[source]
     if source == "instagram" and options.pop("comments"):

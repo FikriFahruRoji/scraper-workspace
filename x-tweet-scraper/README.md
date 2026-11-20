@@ -17,6 +17,9 @@ dengan antarmuka **Streamlit**.
 - Login manual ke X lewat browser (satu kali); **sesi tersimpan** di `sessions/x_profile`
   sehingga tidak perlu login ulang.
 - Mode headless / Google Chrome asli (lebih sulit terdeteksi).
+- **Stealth penuh**: `StealthySession` dengan `hide_canvas`, `block_webrtc`, WebGL
+  aktif, locale `en-US`, dan zona waktu `Asia/Jakarta` di semua jalur (login,
+  cek sesi, dan scraping).
 - **Log proses tampil langsung** saat scraping berjalan.
 - **Jeda 30 detik setiap 2 menit** selama proses scraping untuk mengurangi risiko rate-limit X.
 - Tanpa batas jumlah tweet (berhenti saat hasil habis; bisa diberi batas waktu opsional).
@@ -79,6 +82,9 @@ Lalu buka URL yang muncul (biasanya http://localhost:8501).
 
 ## Catatan penting
 
+- **UI baru X (2026) didukung.** Scraper menangani endpoint `SearchByRawQuery`
+  dan skema `details.full_text` / `details.created_at_ms` / `counts.*`, sekaligus
+  tetap kompatibel dengan skema lama (`legacy.full_text`, `SearchTimeline`).
 - **Patuhi aturan & ToS X.** Gunakan hanya untuk konten yang boleh Anda akses.
   Tambahkan jeda antar-scroll (opsi lanjutan) dan batasi volume agar tidak membebani server.
 - Operator `until:` di X bersifat eksklusif; kode otomatis menambah 1 hari agar

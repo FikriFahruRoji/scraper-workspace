@@ -43,6 +43,10 @@ _SCROLL_JS = r"""
 _MAX_SCROLLS = 600        # pengaman: jangan menggulir selamanya
 _STOP_AFTER = 6           # berhenti jika N gulir berturut-turut tanpa tweet baru
 
+# UI lama memakai article[data-testid="tweet"]; UI baru (x-web) hanya <article>.
+_TWEET_SELECTOR = 'article[data-testid="tweet"], article'
+_TWEET_COUNT_JS = "document.querySelectorAll('article').length"
+
 _PAUSE_EVERY_S = 120      # jeda berkala setiap 2 menit proses scraping
 _PAUSE_DURATION_S = 30    # durasi jeda (detik)
 
@@ -55,6 +59,32 @@ _PAUSE_DURATION_S = 30    # durasi jeda (detik)
 def default_user_data_dir() -> str:
     """Path profil browser yang persisten (menyimpan sesi login X)."""
     return str(DEFAULT_PROFILE_DIR)
+
+
+def _session_options(
+    *,
+    headless: bool,
+    real_chrome: bool,
+    user_data_dir: str,
+    **extra: Any,
+) -> dict[str, Any]:
+    """Opsi StealthySession bersama agar semua jalur X selalu memakai stealth.
+
+    ``hide_canvas`` dan ``block_webrtc`` menutup dua sidik jari yang lazim dipakai
+    X untuk membedakan browser otomatis; ``locale``/``timezone_id`` disamakan
+    dengan locale aplikasi (WIB).
+    """
+    return {
+        "headless": headless,
+        "real_chrome": real_chrome,
+        "user_data_dir": user_data_dir,
+        "locale": "en-US",
+        "timezone_id": "Asia/Jakarta",
+        "hide_canvas": True,
+        "block_webrtc": True,
+        "allow_webgl": True,
+        **extra,
+    }
 
 
 def build_query(keyword: str, start_date: Optional[date] = None, end_date: Optional[date] = None) -> str:
@@ -119,6 +149,20 @@ def _to_jakarta(raw: Any) -> Optional[datetime]:
     if dt.tzinfo is None:
         dt = dt.replace(tzinfo=ZoneInfo("UTC"))
     return dt.astimezone(_JAKARTA)
+
+
+def _from_epoch_ms(value: Any) -> Optional[datetime]:
+    """Ubah ``details.created_at_ms`` (milidetik epoch) menjadi datetime GMT+7."""
+    try:
+        milliseconds = int(value)
+    except (TypeError, ValueError):
+        return None
+    if milliseconds <= 0:
+        return None
+    try:
+        return datetime.fromtimestamp(milliseconds / 1000, tz=ZoneInfo("UTC")).astimezone(_JAKARTA)
+    except (OverflowError, OSError, ValueError):
+        return None
 
 
 # --------------------------------------------------------------------------- #
@@ -201,8 +245,15 @@ def _user_location(user: dict[str, Any]) -> str:
 
 
 def _flatten_tweet(payload: dict[str, Any]) -> tuple[Optional[dict[str, Any]], Optional[datetime]]:
-    """Ekstrak satu tweet menjadi dict kolom + timestamp GMT+7 (untuk filter/sort)."""
+    """Ekstrak satu tweet menjadi dict kolom + timestamp GMT+7 (untuk filter/sort).
+
+    Mendukung dua skema X: skema lama (``legacy.full_text``, ``legacy.created_at``,
+    ``legacy.*_count``) dan skema UI baru 2026 (``details.full_text``,
+    ``details.created_at_ms``, ``counts.*``).
+    """
     legacy = payload.get("legacy") or {}
+    details = payload.get("details") or {}
+    counts = payload.get("counts") or {}
     core = payload.get("core") or {}
     user_result = (core.get("user_results") or {}).get("result") if isinstance(core, dict) else None
     user = _unwrap(user_result) if isinstance(user_result, dict) else {}
@@ -213,6 +264,12 @@ def _flatten_tweet(payload: dict[str, Any]) -> tuple[Optional[dict[str, Any]], O
     verification = user.get("verification") or {}
     views = payload.get("views") or {}
 
+    def count(name: str) -> int:
+        for source in (counts, legacy):
+            if isinstance(source, dict) and source.get(name) is not None:
+                return _to_int(source[name])
+        return 0
+
     rest_id = str(payload.get("rest_id") or legacy.get("id_str") or "").strip()
     # Skema baru X: nama & username ada di user["core"]; skema lama di user["legacy"].
     name = _first_str(user_core.get("name"), user_legacy.get("name"), user.get("name"))
@@ -221,18 +278,30 @@ def _flatten_tweet(payload: dict[str, Any]) -> tuple[Optional[dict[str, Any]], O
     )
     location = _user_location(user)
     verified = bool(
-        user.get("is_blue_verified")
+        (verification.get("is_blue_verified") if isinstance(verification, dict) else False)
+        or user.get("is_blue_verified")
         or (verification.get("verified") if isinstance(verification, dict) else False)
         or user.get("verified_type")
         or user_legacy.get("verified")
     )
-    full_text = (legacy.get("full_text") or "").strip()
+
+    note = ((payload.get("note_tweet") or {}).get("note_tweet_results") or {}).get("result") or {}
+    note_text = note.get("text") if isinstance(note, dict) else ""
+    full_text = (note_text or details.get("full_text") or legacy.get("full_text") or "").strip()
     lang = (legacy.get("lang") or "").strip()
 
-    in_reply_to = (legacy.get("in_reply_to_screen_name") or "").strip()
-    in_reply_to_status = str(legacy.get("in_reply_to_status_id_str") or "").strip()
+    reply_user = ((payload.get("reply_to_user_results") or {}).get("result") or {})
+    reply_core = reply_user.get("core") if isinstance(reply_user, dict) else {}
+    in_reply_to = _first_str(
+        (reply_core or {}).get("screen_name"), legacy.get("in_reply_to_screen_name")
+    )
+    in_reply_to_status = str(
+        (payload.get("reply_to_results") or {}).get("rest_id")
+        or legacy.get("in_reply_to_status_id_str")
+        or ""
+    ).strip()
 
-    ts = _to_jakarta(legacy.get("created_at"))
+    ts = _from_epoch_ms(details.get("created_at_ms")) or _to_jakarta(legacy.get("created_at"))
 
     row = {
         "waktu": ts.strftime("%Y-%m-%d %H:%M:%S %z") if ts else "",
@@ -248,10 +317,10 @@ def _flatten_tweet(payload: dict[str, Any]) -> tuple[Optional[dict[str, Any]], O
             else ""
         ),
         "VIEW_COUNT": _to_int(views.get("count")),
-        "QUOTE_COUNT": _to_int(legacy.get("quote_count")),
-        "REPLY_COUNT": _to_int(legacy.get("reply_count")),
-        "RETWEET_COUNT": _to_int(legacy.get("retweet_count")),
-        "FAVORITE_COUNT": _to_int(legacy.get("favorite_count")),
+        "QUOTE_COUNT": count("quote_count"),
+        "REPLY_COUNT": count("reply_count"),
+        "RETWEET_COUNT": count("retweet_count"),
+        "FAVORITE_COUNT": count("favorite_count"),
         "USER_LOCATION": location,
         "TWEET URL": (
             f"https://x.com/{screen_name}/status/{rest_id}"
@@ -327,10 +396,11 @@ def login(
         result["message"] = "Waktu login habis (tidak ada sesi X terdeteksi)."
 
     with StealthySession(
-        headless=False,
-        real_chrome=real_chrome,
-        user_data_dir=user_data_dir,
-        locale="en-US",
+        **_session_options(
+            headless=False,
+            real_chrome=real_chrome,
+            user_data_dir=user_data_dir,
+        )
     ) as session:
         session.fetch(
             "https://x.com/login",
@@ -354,10 +424,11 @@ def is_logged_in(user_data_dir: Optional[str] = None, real_chrome: bool = True) 
 
     try:
         with StealthySession(
-            headless=True,
-            real_chrome=real_chrome,
-            user_data_dir=user_data_dir,
-            locale="en-US",
+            **_session_options(
+                headless=True,
+                real_chrome=real_chrome,
+                user_data_dir=user_data_dir,
+            )
         ) as session:
             session.fetch("https://x.com/home", page_action=check, timeout=45000)
     except Exception:
@@ -434,7 +505,7 @@ def _fetch_and_scroll(
             state["not_logged_in"] = True
             return
         try:
-            page.wait_for_selector('article[data-testid="tweet"]', timeout=25000)
+            page.wait_for_selector(_TWEET_SELECTOR, timeout=25000)
         except Exception:
             log(f"⚠️ Tidak ada tweet muncul di {label} (kosong / rate-limit / dibatasi).")
             _drain(session, capture)
@@ -442,22 +513,26 @@ def _fetch_and_scroll(
 
         log(f"📜 {label}: termuat. Menggulir…")
         last_count = 0
+        last_rows = len(capture["rows"])
         no_change = 0
         scrolls = 0
         while scrolls < _MAX_SCROLLS and no_change < _STOP_AFTER:
             if stop_event is not None and stop_event.is_set():
                 break
             try:
-                count = page.evaluate(
-                    "document.querySelectorAll('article[data-testid=\"tweet\"]').length"
-                ) or 0
+                count = page.evaluate(_TWEET_COUNT_JS) or 0
             except Exception:
                 count = 0
-            if count == last_count:
+            # UI baru memvirtualisasi daftar, jadi jumlah artikel bisa menyusut.
+            count = max(count, last_count)
+            _drain(session, capture)
+            rows_now = len(capture["rows"])
+            if count <= last_count and rows_now <= last_rows:
                 no_change += 1
             else:
                 no_change = 0
             last_count = count
+            last_rows = rows_now
             try:
                 page.evaluate(_SCROLL_JS)
             except Exception:
@@ -485,8 +560,6 @@ def _fetch_and_scroll(
                     time.sleep(_PAUSE_DURATION_S)
                 pacing["last"] = time.time()
 
-            if scrolls % 3 == 0:
-                _drain(session, capture)
             if max_minutes and (time.time() - started) > max_minutes * 60:
                 log(f"⏱️ Batas waktu {max_minutes} menit tercapai.")
                 break
@@ -578,15 +651,16 @@ def scrape_tweets(
 
     try:
         with StealthySession(
-            headless=headless,
-            real_chrome=real_chrome,
-            user_data_dir=user_data_dir,
-            locale="en-US",
-            record_requests=True,
-            max_recorded_requests=60000,
+            **_session_options(
+                headless=headless,
+                real_chrome=real_chrome,
+                user_data_dir=user_data_dir,
+                record_requests=True,
+                max_recorded_requests=60000,
+            )
         ) as session:
             if mode == "search":
-                capture = _new_capture(r"SearchTimeline")
+                capture = _new_capture(r"(SearchTimeline|SearchByRawQuery)")
                 _fetch_and_scroll(
                     session, url, wait_ms=wait_ms, max_minutes=max_minutes,
                     log=log, label="hasil pencarian", state=state, capture=capture, pacing=pacing,
@@ -619,7 +693,7 @@ def scrape_tweets(
                 rows = _parse_responses(capture["rows"], None, None)
 
             else:  # search_reply
-                capture = _new_capture(r"(SearchTimeline|TweetDetail)")
+                capture = _new_capture(r"(SearchTimeline|SearchByRawQuery|TweetDetail)")
                 _fetch_and_scroll(
                     session, url, wait_ms=wait_ms, max_minutes=max_minutes,
                     log=log, label="hasil pencarian", state=state, capture=capture, pacing=pacing,

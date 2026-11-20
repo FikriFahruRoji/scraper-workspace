@@ -25,11 +25,10 @@ memakai Chromium bawaan Scrapling. Scraper berita memakai Chromium bawaan.
 |---|---|
 | Berita | StealthySession untuk semua portal, termasuk IDX Channel |
 | Google Maps | Endpoint dan pembacaan tampilan melalui StealthySession |
-| Instagram, Threads, X | StealthySession dengan profil browser per platform |
+| Instagram, Threads, X | StealthySession dengan profil browser per platform; X menutup canvas/WebRTC |
 | Play Store | GET metadata dan POST ulasan melalui browser, parser Play Store 1.2.7 |
 | Saham | GET data OHLCV melalui browser |
 | YouTube | Jalur endpoint dan jalur tampilan melalui browser |
-| Google Scholar dan OpenAlex | Profil lewat StealthySession, publikasi dari impor HTML/CSV |
 
 Jalankan `.venv/bin/python tools/check_stealth.py` untuk menguji startup semua
 aplikasi serta GET dan POST Chrome headless ke fixture lokal. Pemeriksaan

@@ -66,7 +66,6 @@ st.markdown(
 _DEFAULTS = {
     "result": None,
     "last_input": "",
-    "logged_in": None,
     "job": None,
     "job_finalized": False,
 }
@@ -117,7 +116,7 @@ def _safe_filename(name: str) -> str:
 
 
 # Finalisasi dilakukan di thread utama Streamlit, bukan di worker, dan sebelum
-# sidebar dirender agar status sesi Google ikut terbarui.
+# sidebar dirender.
 _job = st.session_state.get("job")
 _job_snap = _job.snapshot() if _job is not None else None
 if (
@@ -127,10 +126,6 @@ if (
 ):
     st.session_state.result = _job_snap["result"]
     st.session_state.job_finalized = True
-    if isinstance(_job_snap["result"], dict):
-        logged = _job_snap["result"].get("logged_in")
-        if logged is not None:
-            st.session_state.logged_in = bool(logged)
     _job_snap = _job.snapshot()
 
 
@@ -233,60 +228,11 @@ with st.sidebar:
 
     st.divider()
 
-    # ---- Login Google (opsional) ----------------------------------------- #
-    st.markdown("**🔐 Sesi Google (opsional)**")
-    st.caption(
-        "Tidak wajib untuk mode cepat/samaran. Login hanya berguna untuk mode "
-        "browser, yang biasanya berhenti di beberapa ratus ulasan."
-    )
-
-    if st.session_state.logged_in is True:
-        st.success("Sesi Google: **aktif** ✅")
-    elif st.session_state.logged_in is False:
-        st.warning("Sesi Google: **belum login**")
-    else:
-        st.info("Status sesi Google: belum dicek.")
-
-    col_login, col_check = st.columns(2)
-    login_clicked = col_login.button(
-        "Login",
-        width="stretch",
-        disabled=_job_running,
-        help="Membuka jendela browser untuk login manual. Kata sandi tidak dibaca aplikasi.",
-    )
-    check_clicked = col_check.button("Cek sesi", width="stretch", disabled=_job_running)
-
-    if login_clicked:
-        with st.spinner(
-            "Membuka browser… Silakan login ke akun Google di jendela yang muncul. "
-            "Aplikasi hanya mendeteksi cookie sesi, bukan kata sandi. Tunggu sampai "
-            "login terdeteksi otomatis."
-        ):
-            res = scraper.login(real_chrome=real_chrome)
-            st.session_state.logged_in = res["ok"]
-        if res["ok"]:
-            st.success("Login terdeteksi! Profil sesi tersimpan untuk scraping berikutnya.")
-        else:
-            st.warning(res.get("message") or "Login gagal / dibatalkan.")
-
-    if check_clicked:
-        with st.spinner("Memeriksa profil sesi Google…"):
-            ok = scraper.is_logged_in(real_chrome=real_chrome)
-            st.session_state.logged_in = ok
-        if ok:
-            st.success("Sesi Google aktif.")
-        else:
-            st.warning("Belum ada sesi Google yang tersimpan.")
-
     with st.expander("Keamanan & batasan", expanded=False):
         st.markdown(
             """
-            - Login hanya menyimpan **profil browser** di folder `sessions/google_profile`.
-              Kata sandi tidak pernah dibaca atau disimpan aplikasi.
-            - **Jangan bagikan** folder `sessions/` — isinya cookie akun Anda.
-            - Google dapat menolak login dari browser otomatis. Jika itu terjadi,
-              gunakan browser biasa atau lanjut tanpa login.
-            - Tanpa login, Google biasanya hanya menampilkan **±5 ulasan**.
+            - Aplikasi tidak memakai login Google. Mode browser biasanya hanya
+              menampilkan sebagian kecil ulasan.
             - Mode cepat/samaran memakai endpoint ulasan internal Google yang
               tidak terdokumentasi resmi; endpoint dapat berubah sewaktu-waktu.
             - Google Maps dapat mengubah struktur halaman atau membatasi akses
@@ -473,9 +419,8 @@ if error:
         st.warning("Google Maps membatasi tampilan ulasan.")
         st.markdown(message)
         st.info(
-            "Buka sidebar → **Login** untuk masuk ke akun Google, lalu ulangi "
-            "scraping. Jika Google tetap membatasi, gunakan browser biasa atau "
-            "API resmi Google Places."
+            "Coba **mode samaran** atau **mode cepat**, atau gunakan API resmi "
+            "Google Places."
         )
     elif error == "no_reviews":
         st.warning("Tidak ada ulasan yang terbaca.")
@@ -528,8 +473,8 @@ if place.get("website"):
 if result.get("limited"):
     st.warning(
         "🚧 Google Maps menampilkan **versi terbatas**. Hasil di bawah mungkin "
-        "hanya sebagian kecil dari total ulasan. Login lewat sidebar dapat "
-        "membuka lebih banyak data (batas tetap ditentukan Google)."
+        "hanya sebagian kecil dari total ulasan. Coba mode samaran atau mode "
+        "cepat untuk mengambil lebih banyak data."
     )
 
 _total_place = int(place.get("jumlah_ulasan") or 0)

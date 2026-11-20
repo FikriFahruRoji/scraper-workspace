@@ -33,8 +33,8 @@ live, tabel hasil, ringkasan, serta ekspor CSV/JSON.
 > serta hukum yang berlaku.
 >
 > Aplikasi ini **tidak** melewati CAPTCHA, paywall, atau kontrol akses, dan
-> tidak memakai proxy untuk menyamarkan diri. Login Google bersifat opsional,
-> manual, dan memakai akun Anda sendiri. Jika Anda membutuhkan data yang
+> tidak memakai proxy untuk menyamarkan diri. Aplikasi tidak menyediakan login
+> Google. Jika Anda membutuhkan data yang
 > lengkap dan legal untuk produksi, gunakan **Google Places API** resmi.
 
 ## Fitur
@@ -50,8 +50,6 @@ live, tabel hasil, ringkasan, serta ekspor CSV/JSON.
   balasan pemilik (bila ada), dan ID ulasan.
 - Metadata tempat: nama, kategori, alamat, telepon, website, rating, jumlah ulasan,
   `place_id`, dan link final.
-- **Login Google opsional** lewat browser tampak; sesi disimpan di profil
-  browser terpisah. Kata sandi tidak dibaca/disimpan aplikasi.
 - Mode headless / browser tampak, Chrome asli / Chromium Scrapling.
 - Batas maksimum ulasan dan waktu, jeda berkala untuk mengurangi risiko rate-limit.
 - **Log live** dan proses di background agar UI tidak membeku.
@@ -105,9 +103,9 @@ Buka URL yang muncul (biasanya <http://localhost:8501>).
 1. Buka tempat di Google Maps → **Bagikan** → **Salin link**.
 2. Tempel link di sidebar aplikasi.
 3. Pilih **metode pengambilan**:
-   - **🥷 Samaran** — default; request lewat browser stealth, tidak wajib login.
+   - **🥷 Samaran** — default; request lewat browser stealth.
    - **⚡ Cepat** — HTTP langsung, paling cepat.
-   - **🖥️ Browser** — login Google opsional lewat tombol **Login**.
+   - **🖥️ Browser** — membuka tampilan Google Maps; hasilnya terbatas.
 4. Atur urutan (mode cepat), batas ulasan/waktu bila perlu, lalu klik **Scraping 🚀**.
 5. Lihat log live. Setelah selesai, filter/telusuri hasil dan unduh CSV/JSON.
 
@@ -132,9 +130,8 @@ sampai batas ulasan/waktu tercapai atau token habis. Pada pengujian, mode ini
 bisa melewati 590+ ulasan dengan mudah — jauh lebih banyak daripada mode browser.
 Uji lain berhasil mengambil **1.000 komentar teks dalam ±99 detik**.
 
-**Mode browser** membuka tampilan Google Maps seperti manusia. Tanpa login,
-Google biasanya menampilkan tampilan terbatas; setelah login pun feed web sering
-berhenti di sekitar 430–480 kartu dan tidak menampilkan tombol “muat lebih”.
+**Mode browser** membuka tampilan Google Maps seperti manusia. Karena tanpa
+login, Google biasanya menampilkan tampilan terbatas (sering hanya ±5 ulasan).
 Ini batas dari Google, bukan bug scraper.
 
 > Endpoint mode cepat adalah API internal yang **tidak terdokumentasi resmi**.
@@ -211,9 +208,8 @@ memberikan token kapan saja. Jadi:
 - **Mode cepat**: bergantung pada endpoint internal Google; dapat berhenti,
   membatasi, atau berubah tanpa pemberitahuan. Jumlah suka per ulasan tidak
   diambil pada mode ini.
-- **Mode browser tanpa login**: biasanya hanya sekitar 5 ulasan pertama.
-- **Mode browser dengan login**: feed dapat memuat beberapa ratus komentar,
-  lalu berhenti; jumlah pastinya ditentukan Google.
+- **Mode browser**: biasanya hanya sekitar 5 ulasan pertama karena aplikasi
+  tidak memakai login Google.
 - Jumlah total rating di Google **tidak sama** dengan jumlah komentar teks yang
   dapat diambil.
 - Google dapat memperlambat atau menghentikan endpoint setelah ribuan request;
@@ -230,13 +226,8 @@ memberikan token kapan saja. Jadi:
 ## Troubleshooting
 
 **Hanya dapat 5 ulasan**\
-Itu batas tampilan Google untuk pengunjung tanpa login. Coba **Login**, atau
-gunakan link tempat yang tepat.
-
-**Login ditolak Google**\
-Google memang sering menolak login dari browser otomatis. Coba opsi “Gunakan
-Google Chrome asli” dan mode non-headless. Jika tetap gagal, lanjut tanpa login
-atau gunakan Google Places API resmi.
+Itu batas tampilan Google untuk pengunjung tanpa login. Pakai **mode samaran**
+atau **mode cepat**, dan pastikan link tempat sudah tepat.
 
 **Chrome gagal dibuka**\
 Nonaktifkan **“Gunakan Google Chrome asli”** di Opsi lanjutan, lalu coba lagi.
@@ -247,7 +238,7 @@ Pastikan link menunjuk ke **tempat**, bukan daftar pencarian/profil. Tempat
 harus memiliki ulasan publik. Coba buka link yang sama di browser biasa.
 
 **Proses lama / menggulir terus**\
-Turunkan **Maksimum ulasan** dan **Waktu maksimum** di sidebar. Tanpa login,
+Turunkan **Maksimum ulasan** dan **Waktu maksimum** di sidebar. Di mode browser,
 aplikasi berhenti lebih cepat setelah mencapai batas tampilan.
 
 ## Struktur proyek
@@ -261,8 +252,8 @@ gmaps-reviews-scraper/
 ├── README.md
 ├── .streamlit/
 │   └── config.toml
-└── sessions/              # Profil browser / cookie sesi Google
+└── sessions/              # Profil browser untuk scraping
 ```
 
-> Folder `sessions/` berisi cookie akun jika Anda login. **Jangan bagikan
-> folder ini.** Hapus folder tersebut jika ingin menghapus sesi.
+> Folder `sessions/` berisi profil browser yang dipakai saat scraping. Folder ini
+> boleh dihapus kapan saja.

@@ -99,6 +99,7 @@ _NETWORK_MARKERS = (
     "xig_user_by_username",
     "polaris_ordered_timeline_connection",
     "xig_logged_out_popular_search_media_info",
+    "xdt_fbsearch__top_serp_graphql",
     "edge_owner_to_timeline_media",
     "xdt_api__v1__feed__user_timeline_graphql_connection",
     "xdt_api__v1__media__media_id__comments",
@@ -924,6 +925,25 @@ def _count_from(data: dict[str, Any], *keys: str) -> int:
     return 0
 
 
+def _image_url(data: dict[str, Any]) -> str:
+    """Ambil URL gambar utama; UI baru hanya menyediakan ``image_versions2``."""
+    url = _first_str(
+        data.get("display_uri"), data.get("display_url"), data.get("thumbnail_src")
+    )
+    if url:
+        return url
+    versions = data.get("image_versions2")
+    if isinstance(versions, dict):
+        candidates = versions.get("candidates")
+        if isinstance(candidates, list):
+            for candidate in candidates:
+                if isinstance(candidate, dict):
+                    candidate_url = candidate.get("url")
+                    if isinstance(candidate_url, str) and candidate_url:
+                        return candidate_url
+    return ""
+
+
 def _media_row(data: dict[str, Any]) -> Optional[dict[str, Any]]:
     code = _first_str(data.get("code"), data.get("shortcode"))
     if not code:
@@ -1005,9 +1025,7 @@ def _media_row(data: dict[str, Any]) -> Optional[dict[str, Any]]:
         "lokasi": location_name,
         "kolaborator": ", ".join(coauthor_names),
         "url": url,
-        "thumbnail": _first_str(
-            data.get("display_uri"), data.get("display_url"), data.get("thumbnail_src")
-        ),
+        "thumbnail": _image_url(data),
         "aksesibilitas": _first_str(data.get("accessibility_caption")),
         "tanggal_perkiraan": approx,
         "_has_comments": "comments_connection" in data,

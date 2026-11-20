@@ -39,12 +39,12 @@ def _write_sheets(workbook, rows, sheet_name, header):
             sheet.write_row(index, 0, [_value(row.get(column)) for column in columns])
 
 
-def xlsx_bytes(rows, *, profile_metrics=()):
+def xlsx_bytes(rows, *, sheet_name="Hasil", extra_sheets=None):
     output = BytesIO()
     options = {"constant_memory": True, "strings_to_formulas": False, "strings_to_urls": False}
     with xlsxwriter.Workbook(output, options) as workbook:
         header = workbook.add_format({"bold": True, "font_color": "#FFFFFF", "bg_color": "#174A65"})
-        _write_sheets(workbook, rows, "Hasil", header)
-        if profile_metrics:
-            _write_sheets(workbook, profile_metrics, "Metrik profil", header)
+        _write_sheets(workbook, rows, sheet_name, header)
+        for name, records in (extra_sheets or {}).items():
+            _write_sheets(workbook, records, name, header)
     return output.getvalue()

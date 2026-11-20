@@ -6,7 +6,7 @@ if not exist "%WORKSPACE_PY%" (
     py -3.11 -m venv .venv
     if errorlevel 1 goto failed
 )
-"%WORKSPACE_PY%" -c "import importlib.metadata as m; import plotly, pandas, xlsxwriter; assert m.version('streamlit')=='1.67.0' and m.version('scrapling')=='0.5.1' and m.version('google-play-scraper')=='1.2.7'" >nul 2>&1
+"%WORKSPACE_PY%" -c "import importlib.metadata as m; import plotly, pandas, xlsxwriter, Sastrawi, emoji, openpyxl, sklearn; assert m.version('streamlit')=='1.67.0' and m.version('scrapling')=='0.5.1' and m.version('google-play-scraper')=='1.2.7'" >nul 2>&1
 if errorlevel 1 (
     "%WORKSPACE_PY%" -m pip install -r requirements.txt
     if errorlevel 1 goto failed

@@ -54,6 +54,9 @@ Dua mode utama:
   tanpa membuka browser dan tanpa mengunci profil.
 - Mode **kata kunci** memeriksa sesi lebih dulu, sehingga tidak menggantung di
   halaman login ketika Anda belum masuk.
+- Mode **kata kunci** membaca respons UI Instagram 2026
+  (`xdt_fbsearch__top_serp_graphql`) sekaligus endpoint lama, termasuk thumbnail
+  dari `image_versions2`.
 - Scraping komentar membaca data yang sudah tertanam di HTML **dan** menangkap
   respons GraphQL internal. Daftar komentar digulir dengan **event wheel nyata**
   pada kontainer komentar (bukan hanya mengubah `scrollTop`), lalu tombol
