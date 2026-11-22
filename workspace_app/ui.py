@@ -313,7 +313,7 @@ def _icon_uri(source):
 
 def source_chip(source):
     """HTML for the rounded icon that identifies a data source: its logo, or a symbol in the theme accent."""
-    uri = _icon_uri(source)
+    uri = _icon_uri("gmaps" if source == "gmaps_places" else source)
     if not uri:
         return ""
     if source in BRAND_COLORS:

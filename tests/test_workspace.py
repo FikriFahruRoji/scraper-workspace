@@ -380,7 +380,7 @@ def test_preprocessing_page_previews_and_switches_presets(tmp_path, monkeypatch)
     assert result["report"]["baris_masuk"] == 2 and result["params"]["masukan"]["sumber"] == "news"
 
 
-def test_preprocessing_history_page_renders_report(tmp_path, monkeypatch):
+def test_preprocessing_dataset_opens_report_and_downloads(tmp_path, monkeypatch):
     from workspace_app import preprocess as pp
     manager = _seeded_manager(tmp_path, monkeypatch)
     config = {**pp.LIGHT, **pp.DEFAULT_LISTS}
@@ -388,12 +388,15 @@ def test_preprocessing_history_page_renders_report(tmp_path, monkeypatch):
     manager.start_preprocessing(params, [{"t": "Halo bgt"}], ["t"], config, pp.build_resources(config), project="Uji")
     manager._thread.join(10)
     at = AppTest.from_file(_page_script(
-        tmp_path, "from workspace_app.preprocess_view import preprocessing_history_page\n"
-                  "preprocessing_history_page(st.session_state['manager'])\n"), default_timeout=60)
+        tmp_path, "from workspace_app.studio import preprocessing_dataset_page\n"
+                  "preprocessing_dataset_page(st.session_state['manager'])\n"), default_timeout=60)
     at.session_state["manager"] = manager
     at.run()
     assert not at.exception
-    assert at.title[0].value == "Riwayat Preprocessing"
+    assert at.title[0].value == "Dataset Preprocessing"
+    next(button for button in at.button if button.label == "Buka").click().run()
+    assert not at.exception
+    assert {b.label for b in at.get("download_button")} >= {"Unduh Excel", "Unduh CSV", "Unduh JSON"}
     assert any("data.csv" in caption.value for caption in at.caption)
     assert [metric.value for metric in at.metric][:2] == ["1", "1"]
 

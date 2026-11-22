@@ -7,9 +7,7 @@ mengekstrak data dari DOM.
 Catatan penting:
   - Google Maps membatasi tampilan ulasan untuk pengunjung yang belum login
     (saat proyek ini dibuat: sekitar 5 ulasan pertama + ajakan login).
-  - Karena itu tersedia login manual OPSIONAL memakai profil Chrome terpisah.
-    Aplikasi tidak meminta, membaca, atau menyimpan kata sandi; hanya cookie
-    sesi di profil browser lokal.
+  - Workspace menyediakan profil browser lokal untuk sesi Google Maps.
   - Aplikasi tidak melewati CAPTCHA, paywall, atau kontrol akses apa pun.
     Gunakan hanya untuk data publik yang Anda berhak akses dan patuhi ToS
     Google Maps.
@@ -793,119 +791,6 @@ def _parse_reviewer_info(info: str) -> tuple[int, int]:
     if match:
         photos = _parse_count(match.group(1))
     return reviews, photos
-
-
-# --------------------------------------------------------------------------- #
-# Login & status
-# --------------------------------------------------------------------------- #
-
-
-def login(
-    user_data_dir: Optional[str] = None,
-    real_chrome: bool = True,
-    timeout_s: int = 600,
-    stop_event=None,
-) -> dict[str, Any]:
-    """Buka browser tampak agar pengguna login ke akun Google.
-
-    Kata sandi tidak pernah dibaca oleh aplikasi. Yang tersimpan hanyalah
-    profil browser (cookie sesi) di ``sessions/google_profile``.
-    """
-    user_data_dir = user_data_dir or default_user_data_dir()
-    pathlib.Path(user_data_dir).mkdir(parents=True, exist_ok=True)
-    result: dict[str, Any] = {"ok": False, "message": ""}
-    login_url = (
-        "https://accounts.google.com/ServiceLogin?hl=id"
-        "&continue=https%3A%2F%2Fwww.google.com%2Fmaps%3Fhl%3Did"
-    )
-
-    def wait_login(page) -> None:
-        for _ in range(max(1, timeout_s)):
-            if stop_event is not None and stop_event.is_set():
-                result["message"] = "Login dihentikan."
-                return
-            try:
-                if _has_google_session(page.context.cookies()):
-                    result["ok"] = True
-                    return
-            except Exception:
-                pass
-
-            try:
-                body = (page.inner_text("body") or "").lower()
-            except Exception:
-                body = ""
-
-            if (
-                "browser or app may not be secure" in body
-                or "browser atau aplikasi ini mungkin tidak aman" in body
-                or "couldn't sign you in" in body
-            ):
-                result["message"] = (
-                    "Google menolak login dari browser otomatis. Coba lagi dengan "
-                    "opsi 'Gunakan Google Chrome asli', atau gunakan mode headful. "
-                    "Jika tetap ditolak, Google memang membatasi login otomatis."
-                )
-                return
-
-            try:
-                page.wait_for_timeout(1000)
-            except Exception:
-                break
-
-        if not result["ok"]:
-            result["message"] = (
-                "Waktu login habis / jendela ditutup. Cookie sesi Google tidak "
-                "terdeteksi. Coba lagi atau lanjut tanpa login."
-            )
-
-    try:
-        with StealthySession(
-            headless=False,
-            real_chrome=real_chrome,
-            user_data_dir=user_data_dir,
-            locale="id-ID",
-        ) as session:
-            session.fetch(
-                login_url,
-                page_action=wait_login,
-                timeout=(timeout_s + 30) * 1000,
-            )
-    except Exception as exc:  # noqa: BLE001
-        result["message"] = f"Gagal membuka browser login: {exc}"
-    return result
-
-
-def is_logged_in(
-    user_data_dir: Optional[str] = None,
-    real_chrome: bool = True,
-) -> bool:
-    """Cek cepat (headless) apakah profil sudah punya sesi Google."""
-    user_data_dir = user_data_dir or default_user_data_dir()
-    pathlib.Path(user_data_dir).mkdir(parents=True, exist_ok=True)
-    found = {"ok": False}
-
-    def check(page) -> None:
-        try:
-            found["ok"] = _has_google_session(page.context.cookies())
-        except Exception:
-            found["ok"] = False
-
-    try:
-        with StealthySession(
-            headless=True,
-            real_chrome=real_chrome,
-            user_data_dir=user_data_dir,
-            locale="id-ID",
-        ) as session:
-            session.fetch(
-                "https://www.google.com/maps?hl=id",
-                page_action=check,
-                timeout=45000,
-            )
-    except Exception:
-        return False
-    return bool(found["ok"])
 
 
 # --------------------------------------------------------------------------- #
@@ -1784,7 +1669,7 @@ def scrape_reviews(
         result["error"] = "limited_view"
         result["message"] = (
             "Google Maps membatasi tampilan ulasan dan tidak ada ulasan yang bisa "
-            "dibaca. Coba login melalui sidebar atau buka link di browser biasa."
+            "dibaca. Periksa tautan tempat di browser biasa."
         )
     else:
         result["error"] = "no_reviews"

@@ -10,7 +10,7 @@ from workspace_app import ui
 from workspace_app.excel import xlsx_bytes
 from workspace_app.jobs import ACTIVE, clean_project, encode
 from workspace_app.sources import label
-from workspace_app.views import csv_bytes, history_page, started_label
+from workspace_app.views import csv_bytes, started_label
 
 PREVIEW_ROWS = 20
 KEY = "pp-"
@@ -373,7 +373,3 @@ def preprocessing_page(manager):
                                 on_click="ignore", key=KEY + "dl-csv")
         cols[2].download_button("Unduh JSON", lambda: encode(result), f"{name}.json", "application/json",
                                 on_click="ignore", key=KEY + "dl-json")
-
-
-def preprocessing_history_page(manager):
-    history_page(manager, preprocessing=True, details=preprocessing_details)
