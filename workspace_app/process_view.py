@@ -31,6 +31,12 @@ def process_page(manager):
     live(manager)
 
 
+def stop_button(manager, stopping):
+    if st.button("Hentikan", icon=":material/stop_circle:", disabled=stopping, key="process-stop"):
+        manager.stop()
+        st.rerun()
+
+
 @st.fragment(run_every=1)
 def live(manager):
     active, _ = manager.snapshot()
@@ -38,16 +44,23 @@ def live(manager):
         finished(manager)
         return
     st.session_state["proc-last"] = active["id"]
+    name = label(active["source"])
+    if active["login"]:
+        with st.container(key="panel-process"):
+            st.markdown(f"**{name}**")
+            if active["stopping"]:
+                st.badge("Sedang menghentikan", icon=":material/pause_circle:", color="orange")
+            else:
+                st.badge("Login di jendela browser", icon=":material/login:", color="blue")
+            stop_button(manager, active["stopping"])
+        return
     job = manager.get(active["id"])
     logs = manager.logs(active["id"])
-    name = label(active["source"])
     with st.container(key="panel-process"):
         with st.container(horizontal=True, vertical_alignment="center"):
             st.markdown(f"**{job['project'] or name}**")
             if active["stopping"]:
                 st.badge("Sedang menghentikan", icon=":material/pause_circle:", color="orange")
-            elif active["login"]:
-                st.badge("Login di jendela browser", icon=":material/login:", color="blue")
             else:
                 ui.status_badge("running")
         st.caption(f"{name} · mulai {ui.long_date(job['started'])}")
@@ -65,9 +78,7 @@ def live(manager):
             st.caption("Menampilkan 60 pesan terakhir. Halaman ini diperbarui tiap detik.")
         else:
             st.caption("Menyiapkan proses… log pertama akan muncul sebentar lagi.")
-        if st.button("Hentikan", icon=":material/stop_circle:", disabled=active["stopping"], key="process-stop"):
-            manager.stop()
-            st.rerun()
+        stop_button(manager, active["stopping"])
         if active["source"] == "preprocessing":
             st.caption("Data yang sudah selesai diproses tetap disimpan bila proses dihentikan.")
 

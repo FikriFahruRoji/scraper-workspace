@@ -597,6 +597,23 @@ def test_process_page_shows_log_while_running_and_a_summary_afterwards(tmp_path,
     assert any(b.label == "Hentikan" for b in running.button)
 
 
+def test_process_page_handles_login_without_a_job(tmp_path, monkeypatch):
+    manager = _seeded_manager(tmp_path, monkeypatch)
+    active = {"source": "x", "id": None, "stopping": False, "login": True}
+    monkeypatch.setattr(manager, "snapshot", lambda: (active, {}))
+    monkeypatch.setattr(manager, "stop", lambda: active.update(stopping=True))
+    app = AppTest.from_file(_page_script(
+        tmp_path, "from workspace_app.process_view import process_page\n"
+                  "process_page(st.session_state['manager'])\n"))
+    app.session_state["manager"] = manager
+    app.run()
+    assert not app.exception
+    assert any("X / Twitter" in m.value for m in app.markdown)
+    app.button(key="process-stop").click().run()
+    assert not app.exception
+    assert app.button(key="process-stop").disabled
+
+
 def test_preprocessing_dataset_page_lists_only_preprocessing_jobs(tmp_path, monkeypatch):
     manager = _seeded_manager(tmp_path, monkeypatch)
     manager.start_preprocessing({"masukan": {}, "kolom": ["judul"], "konfigurasi": {}}, [{"judul": "Banjir Jakarta"}],
