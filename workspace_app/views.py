@@ -336,6 +336,8 @@ def recovery_hints(job):
         from workspace_app.open_data_view import hints as open_data_hints
         return open_data_hints(job)
     message = str(job.get("message") or "").lower()
+    if "executable doesn't exist" in message and "browser" in message:
+        return ["Periksa instalasi Chromium dan lokasi executable di server, lalu jalankan ulang pekerjaan."]
     if job["source"] in LOGINS:
         hints.append("Pastikan kamu sudah login: buka form sumber lalu klik **Login platform**.")
     start, end = _as_date(params.get("start_date")), _as_date(params.get("end_date"))

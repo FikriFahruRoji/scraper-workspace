@@ -1,5 +1,7 @@
 """Sesi Chromium Scrapling yang dipakai ulang untuk semua portal."""
 
+from shutil import which
+
 from scrapling.fetchers import AsyncStealthySession
 
 
@@ -12,6 +14,7 @@ def open_session(
     max_pages: int = 4,
 ) -> AsyncStealthySession:
     return AsyncStealthySession(
+        executable_path=which("chromium"),
         headless=headless,
         load_dom=False,
         network_idle=False,
