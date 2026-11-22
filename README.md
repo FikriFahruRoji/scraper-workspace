@@ -60,7 +60,7 @@ Jika macOS meminta menjalankan launcher dari Terminal, gunakan
   (Gabungkan Data, Preprocessing Data, Proses Berjalan, Dataset Preprocessing), dan **Analisis** (Statistik Data, Frekuensi
   Kata, Tren Waktu, Topik Teks, Jaringan Kata). Tema dipilih di sidebar, bagian **Pengaturan**: **Sistem**
   (mengikuti komputermu), **Terang**, atau **Gelap**. Pilihan disimpan di komputer ini.
-- **Lakukan Scraping**: pilih sumber dari katalog (bisa dicari, diurutkan, dan difilter
+- **Lakukan Scraping**: pilih sumber dari katalog (bisa dicari dan difilter
   per kategori), klik **Kumpulkan Data**, isi parameter, periksa panel ringkasan, lalu klik
   **Mulai Ambil Data**. Satu pekerjaan atau login platform bisa aktif pada satu waktu dan
   tetap berjalan ketika berpindah halaman.
@@ -225,7 +225,7 @@ python tools/check_news_performance.py
 python tools/check_transport.py
 ```
 
-Uji Workspace mencakup pipeline preprocessing, form 9 sumber, pekerjaan tunggal, penghentian, pemulihan
+Uji Workspace mencakup pipeline preprocessing, form seluruh sumber terdaftar, pekerjaan tunggal, penghentian, pemulihan
 hasil parsial, nama proyek, dan ekspor. Integrasi browser dan launcher
 gabungan telah diuji di macOS. Launcher Windows belum diuji pada perangkat
 Windows.
