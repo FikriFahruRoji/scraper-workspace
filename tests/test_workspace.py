@@ -195,7 +195,7 @@ def test_default_project_names_source_subject_and_date():
     from workspace_app.jobs import default_project
     when = datetime(2026, 11, 18)
     url = "https://www.google.com/maps/place/Kopi+Kenangan+Senayan/@-6.2,106.8,17z"
-    assert default_project("gmaps", {"url_input": url}, when) == "Google Maps · Kopi Kenangan Senayan · 18-11-2026"
+    assert default_project("gmaps", {"url_input": url}, when) == "Google Maps Review · Kopi Kenangan Senayan · 18-11-2026"
     assert default_project("news", {"keyword": "  banjir   jakarta "}, when) == "Berita · banjir jakarta · 18-11-2026"
     assert default_project("saham", {}, when) == "Saham · 18-11-2026"
 
@@ -491,7 +491,7 @@ def test_merge_combines_datasets_and_tags_origin(tmp_path, monkeypatch):
     # 25 news + 3 identical gmaps rows (deduplicated to 1) + 2 identical news rows (deduplicated to 1).
     assert len(rows) == 25 + 1 + 1
     assert set(rows[0]) >= {"sumber_data", "pekerjaan_asal"}
-    assert {row["sumber_data"] for row in rows} == {"Berita", "Google Maps"}
+    assert {row["sumber_data"] for row in rows} == {"Berita", "Google Maps Review"}
     assert manager.get(job["id"])["metadata"]["duplikat_dibuang"] == 3
     assert "gabungan" in manager.inventory_options()[0]
     with __import__("pytest").raises(ValueError):
@@ -771,3 +771,234 @@ def test_analysis_selects_available_text_when_clean_column_is_null(tmp_path):
     app.run()
     assert not app.exception
     assert app.multiselect(key="freq-columns").value == ["caption"]
+
+
+
+IMF_SAMPLE = b"""<?xml version='1.0'?><message:StructureSpecificData xmlns:message="m" xmlns:ss="s"><message:DataSet>
+<Group INDICATOR="NGDP_RPCH" SERIES_NAME="Gross domestic product (GDP), Constant prices, Percent change"/>
+<Group COUNTRY="IDN" INDICATOR="NGDP_RPCH" LATEST_ACTUAL_ANNUAL_DATA="2025"/>
+<Series COUNTRY="IDN" INDICATOR="NGDP_RPCH" FREQUENCY="A" SCALE="0">
+<Obs TIME_PERIOD="2025" OBS_VALUE="5.1"/><Obs TIME_PERIOD="2026" OBS_VALUE="5.3"/><Obs TIME_PERIOD="2027"/></Series>
+<Series COUNTRY="XYZ" INDICATOR="NGDP_RPCH" FREQUENCY="A" SCALE="0"><Obs TIME_PERIOD="FY2026/27" OBS_VALUE="2.0"/></Series>
+</message:DataSet></message:StructureSpecificData>"""
+
+
+def test_imf_xml_marks_projections_and_handles_fiscal_years():
+    rows = sources.load("imf").parse(IMF_SAMPLE)
+    by = {(row["kode_negara"], row["tahun"]): row for row in rows}
+    assert by[("IDN", 2025)]["jenis"] == "aktual" and by[("IDN", 2026)]["jenis"] == "proyeksi"
+    assert ("IDN", 2027) not in by  # an observation without a value is skipped
+    assert by[("IDN", 2025)]["negara"] == "Indonesia" and by[("IDN", 2025)]["nilai"] == 5.1
+    assert by[("IDN", 2025)]["indikator"].startswith("Gross domestic product")
+    assert ("XYZ", 2026) in by  # 'FY2026/27' still yields a year
+
+
+def test_worldbank_job_end_to_end_with_partial_failure(tmp_path, monkeypatch):
+    import json
+    module = sources.load("worldbank")
+
+    def fake_get(url, **kwargs):
+        if "BAD.CODE" in url:
+            return json.dumps([{"message": [{"id": "120", "value": "The provided parameter value is not valid"}]}]).encode()
+        record = lambda year, value: {"indicator": {"id": "SP.POP.TOTL", "value": "Population, total"},
+                                      "country": {"id": "ID", "value": "Indonesia"}, "countryiso3code": "IDN",
+                                      "date": str(year), "value": value, "unit": ""}
+        return json.dumps([{"page": 1, "pages": 1, "total": 3},
+                           [record(2022, 275.0), record(2021, None), record(2020, 271.0)]]).encode()
+
+    monkeypatch.setattr(module, "get", fake_get)
+    manager = JobManager(tmp_path)
+    params = {"countries": ["IDN"], "indicators": ["SP.POP.TOTL", "BAD.CODE"], "start_year": 2020, "end_year": 2022,
+              "drop_empty": True, "max_minutes": 5}
+    manager.start("worldbank", params, project="Penduduk")
+    manager._thread.join(10)
+    job = manager.get(manager.list_jobs(limit=1)[0]["id"])
+    assert job["status"] == "partial"  # one indicator worked, one did not
+    assert [row["tahun"] for row in job["rows"]] == [2020, 2022]  # empty year dropped, sorted ascending
+    assert "BAD.CODE" in job["message"] and "tidak dikenali" in job["message"]
+
+
+def test_open_data_form_validation_and_rerun_seed(tmp_path):
+    from workspace_app.open_data_view import check, hints
+    from workspace_app.views import validate
+    base = {"countries": ["IDN"], "indicators": ["NGDP_RPCH"], "start_year": 2010, "end_year": 2020, "max_minutes": 5}
+    validate("imf", base)
+    for change, text in ((dict(countries=[]), "negara"), (dict(countries=["ID"]), "tiga huruf"),
+                         (dict(indicators=[]), "indikator"), (dict(indicators=["a b!"]), "tidak valid"),
+                         (dict(start_year=2030), "Tahun mulai")):
+        with __import__("pytest").raises(ValueError, match=text):
+            check({**base, **change})
+    assert any("data.worldbank.org" in hint for hint in hints({"source": "worldbank"}))
+
+    script = _page_script(tmp_path, """
+from workspace_app.views import scraper_form, seed_form
+from workspace_app.jobs import JobManager
+if "seeded" not in st.session_state:
+    st.session_state["seeded"] = True
+    seed_form("worldbank", {"countries": ["IDN", "NOR"], "indicators": ["SP.POP.TOTL", "SP.POP.GROW"],
+                            "start_year": 2015, "end_year": 2022, "drop_empty": False}, "Uji")
+scraper_form(JobManager(PATH), "worldbank", None, {})
+""".replace("PATH", repr(str(tmp_path / "data"))))
+    at = AppTest.from_file(script, default_timeout=30).run()
+    assert not at.exception
+    assert at.multiselect(key="f-worldbank-countries").value == ["IDN"]
+    assert at.text_input(key="f-worldbank-extra_countries").value == "NOR"
+    assert at.text_input(key="f-worldbank-extra_indicators").value == "SP.POP.GROW"
+    assert at.number_input(key="f-worldbank-start_year").value == 2015
+    assert not at.checkbox(key="f-worldbank-drop_empty").value
+
+
+def test_fx_market_turns_currency_pairs_into_yahoo_codes():
+    module = sources.load("saham")
+    normalize = module.normalize_symbol
+    assert normalize("usd/idr", "FX") == "USDIDR=X"
+    assert normalize("EUR IDR", "FX") == "EURIDR=X"
+    assert normalize("idr", "FX") == "IDR=X"  # three letters means US dollar to that currency
+    assert normalize("USDIDR=X", "FX") == "USDIDR=X"
+    assert normalize("bbca", "IDX") == "BBCA.JK"  # other markets are unchanged
+    with __import__("pytest").raises(module.ScraperError, match="tiga huruf"):
+        normalize("dolar rupiah", "FX")
+
+
+QUAKE = {"Tanggal": "20 Nov 2026", "Jam": "20:09:01 WIB", "DateTime": "2026-11-20T13:09:01+00:00",
+         "Coordinates": "-3.88,122.51", "Lintang": "3.88 LS", "Bujur": "122.51 BT", "Magnitude": "5.2",
+         "Kedalaman": "10 km", "Wilayah": "Laut 10 km Utara Kendari", "Potensi": "Tidak berpotensi tsunami",
+         "Dirasakan": "-", "Shakemap": "gempa.mmi.jpg"}
+
+
+def test_bmkg_rows_are_numeric_wib_and_merged_across_feeds(monkeypatch):
+    import json
+    module = sources.load("bmkg")
+    felt = {**QUAKE, "Dirasakan": "III Kota Kendari", "Potensi": ""}
+    feeds = {"autogempa": {"Infogempa": {"gempa": QUAKE}},
+             "gempaterkini": {"Infogempa": {"gempa": [QUAKE]}},
+             "gempadirasakan": {"Infogempa": {"gempa": [felt, {**QUAKE, "DateTime": "2026-11-19T01:00:00+00:00",
+                                                               "Magnitude": "3.1"}]}}}
+    monkeypatch.setattr(module, "get", lambda url, **kwargs: json.dumps(feeds[url.rsplit("/", 1)[1][:-5]]).encode())
+    result = module.collect_earthquakes(["terbaru", "m5", "dirasakan"])
+    rows = result["rows"]
+    assert len(rows) == 2 and result["error"] is None  # the same quake in three feeds is one row
+    top = rows[0]
+    assert top["waktu"] == "2026-11-20T20:09:01+07:00" and top["magnitudo"] == 5.2 and top["kedalaman_km"] == 10.0
+    assert (top["lintang"], top["bujur"]) == (-3.88, 122.51)  # south latitude keeps its sign
+    assert top["daftar"] == "Terbaru, M 5,0+, Dirasakan"
+    assert top["dirasakan"] == "III Kota Kendari" and top["peta_guncangan"].endswith("/gempa.mmi.jpg")
+    monkeypatch.setattr(module, "get", lambda url, **kwargs: b"{not json")
+    broken = module.collect_earthquakes(["terbaru"])
+    assert broken["rows"] == [] and broken["error"]
+
+
+def test_openmeteo_resolves_places_and_reports_the_ones_it_cannot(monkeypatch):
+    import json
+    module = sources.load("openmeteo")
+
+    def fake_get(url, **kwargs):
+        if "geocoding" in url:
+            found = [{"name": "Kota Bandung", "admin1": "Jawa Barat", "country": "Indonesia",
+                      "latitude": -6.92, "longitude": 107.6}] if "Bandung" in url else []
+            return json.dumps({"results": found}).encode()
+        if "latitude=99" in url:
+            return json.dumps({"error": True, "reason": "Latitude must be in range"}).encode()
+        return json.dumps({"latitude": -6.92, "longitude": 107.6, "elevation": 700.0, "daily": {
+            "time": ["2026-11-01", "2026-11-02", "2026-11-03"], "temperature_2m_max": [30.1, None, 31.0],
+            "precipitation_sum": [1.0, None, 0.0]}}).encode()
+
+    monkeypatch.setattr(module, "get", fake_get)
+    result = module.collect_weather(["Bandung", "Nowhere", "-6.2,106.8"], "history", "daily",
+                                    ["temperature_2m_max", "precipitation_sum"], "2026-11-01", "2026-11-03")
+    rows = result["rows"]
+    assert len(rows) == 4  # two places found; the empty day is dropped for each
+    assert rows[0]["lokasi"] == "Kota Bandung, Jawa Barat, Indonesia" and rows[0]["suhu_maks_c"] == 30.1
+    assert rows[0]["tanggal"] == "2026-11-01" and rows[2]["lokasi"] == "-6.2,106.8"
+    assert "Nowhere" in result["error"] and "tidak ditemukan" in result["error"]
+    kept = module.collect_weather(["-6.2,106.8"], "history", "daily", ["temperature_2m_max"], "2026-11-01",
+                                  "2026-11-03", drop_empty=False)
+    assert len(kept["rows"]) == 3
+    bad = module.collect_weather(["99,106"], "history", "daily", ["temperature_2m_max"], "2026-11-01", "2026-11-03")
+    assert bad["rows"] == [] and "Koordinat di luar jangkauan" in bad["error"]
+
+
+def test_nature_form_validation_and_rerun_seed(tmp_path):
+    from datetime import date, timedelta
+    from workspace_app.nature_view import check
+    from workspace_app.views import validate
+    today = date.today()
+    base = {"locations": ["Bandung"], "mode": "history", "interval": "daily", "variables": ["precipitation_sum"],
+            "start_date": today - timedelta(days=10), "end_date": today, "forecast_days": 7, "drop_empty": True}
+    validate("openmeteo", base)
+    validate("bmkg", {"feeds": ["m5"]})
+    for change, text in ((dict(locations=[]), "lokasi"), (dict(variables=[]), "variabel"),
+                         (dict(end_date=today + timedelta(days=1)), "Prakiraan"),
+                         (dict(start_date=today + timedelta(days=1), end_date=today), "Tanggal mulai"), (dict(start_date=date(1900, 1, 1)), "1940"),
+                         (dict(interval="hourly", start_date=today - timedelta(days=500)), "1 tahun"),
+                         (dict(locations=[str(n) for n in range(25)]), "Maksimal")):
+        with __import__("pytest").raises(ValueError, match=text):
+            check({**base, **change}, "openmeteo")
+    with __import__("pytest").raises(ValueError, match="daftar gempa"):
+        check({"feeds": []}, "bmkg")
+
+    script = _page_script(tmp_path, """
+from workspace_app.views import scraper_form, seed_form
+from workspace_app.jobs import JobManager
+if "seeded" not in st.session_state:
+    st.session_state["seeded"] = True
+    seed_form("openmeteo", {"locations": ["Bandung", "-6.2,106.8"], "mode": "history", "interval": "hourly",
+                            "variables": ["temperature_2m"], "start_date": "2026-01-01", "end_date": "2026-01-03",
+                            "forecast_days": 7, "drop_empty": False}, "Uji")
+scraper_form(JobManager(PATH), "openmeteo", None, {})
+""".replace("PATH", repr(str(tmp_path / "data"))))
+    at = AppTest.from_file(script, default_timeout=30).run()
+    assert not at.exception
+    assert at.text_area(key="f-openmeteo-places").value == "Bandung\n-6.2,106.8"
+    assert at.radio(key="f-openmeteo-interval").value == "hourly"
+    assert at.multiselect(key="f-openmeteo-vars-hourly").value == ["temperature_2m"]
+    assert str(at.date_input(key="f-openmeteo-start").value) == "2026-01-01"
+    assert not at.checkbox(key="f-openmeteo-drop_empty").value
+
+
+def test_nature_result_charts_render(tmp_path):
+    script = _page_script(tmp_path, """
+import pandas as pd
+from workspace_app.nature_view import chart
+quakes = pd.DataFrame({"waktu": ["2026-11-20T20:09:01+07:00", "2026-11-19T08:00:00+07:00"], "magnitudo": [5.2, 3.1],
+                       "kedalaman_km": [10.0, 6.0], "lintang": [-3.88, 5.38], "bujur": [122.51, 125.21]})
+weather = pd.DataFrame({"lokasi": ["Bandung", "Bandung", "Surabaya", "Surabaya"], "lintang": [-6.9] * 4,
+                        "bujur": [107.6] * 4, "tanggal": ["2026-11-01", "2026-11-02"] * 2,
+                        "suhu_maks_c": [30.1, 31.0, 33.0, 34.2], "hujan_mm": [1.0, 0.0, 0.2, 0.0]})
+chart(quakes, "bmkg")
+chart(weather, "openmeteo")
+""")
+    at = AppTest.from_file(script, default_timeout=30).run()
+    assert not at.exception
+    assert [metric.value for metric in at.metric] == ["2", "5,2", "10 km"]
+    assert at.selectbox(key="nature-chart").options == ["suhu_maks_c", "hujan_mm"]
+
+
+def test_every_catalogue_source_has_an_icon_chip():
+    import base64
+    import re
+    from workspace_app import ui
+
+    def svg_of(chip):
+        return base64.b64decode(re.search(r"base64,([A-Za-z0-9+/=]+)", chip).group(1)).decode()
+
+    missing = [source for source in sources.LABELS if not ui.source_chip(source)]
+    assert missing == [], f"sumber tanpa ikon: {missing}"
+    brand, symbol = ui.source_chip("instagram"), ui.source_chip("news")
+    assert 'class="source-chip brand"' in brand and "<img" in brand and 'fill="#E4405F"' in svg_of(brand)
+    assert 'class="source-chip symbol"' in symbol and "--glyph:url(data:image/svg+xml" in symbol
+    assert "<title>" not in svg_of(brand)  # the logo's own title text is dropped
+    assert ui.source_chip("tidak-ada") == ""
+
+
+def test_source_catalogue_is_listed_alphabetically(tmp_path, monkeypatch):
+    manager = _seeded_manager(tmp_path, monkeypatch)  # gives some sources more jobs than others
+    at = AppTest.from_file(_page_script(
+        tmp_path, "from workspace_app.studio import scraping_page\nscraping_page(st.session_state['manager'])\n"),
+        default_timeout=30)
+    at.session_state["manager"] = manager
+    at.run()
+    assert not at.exception
+    shown = [button.key.removeprefix("open-") for button in at.button if (button.key or "").startswith("open-")]
+    expected = sorted(sources.LABELS, key=lambda key: sources.LABELS[key].casefold())
+    assert shown == expected

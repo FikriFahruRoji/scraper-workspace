@@ -1,23 +1,23 @@
-"""Load existing scrapers under distinct module names."""
+"""Load the scrapers in scrapers/ under distinct module names."""
 import importlib.util
 from functools import lru_cache
 from pathlib import Path
 import sys
 
 ROOT = Path(__file__).resolve().parents[1]
+SCRAPERS = ROOT / "scrapers"
+SHARED = SCRAPERS / "_shared"  # modules several scrapers import by plain name, such as stealth_transport
 LABELS = {
     "google_scholar": "Google Scholar",
-    "news": "Berita", "gmaps": "Google Maps", "instagram": "Instagram",
+    "news": "Berita", "gmaps": "Google Maps Review", "gmaps_places": "Google Maps Lokasi",
+    "instagram": "Instagram",
     "playstore": "Play Store", "saham": "Saham", "threads": "Threads",
-    "x": "X / Twitter", "youtube": "YouTube",
+    "x": "X / Twitter", "youtube": "YouTube", "worldbank": "World Bank", "imf": "IMF",
+    "bmkg": "Gempa (BMKG)", "openmeteo": "Cuaca (Open-Meteo)", "sinta": "SINTA",
 }
-FOLDERS = {
-    "news": "news-scraper", "gmaps": "gmaps-reviews-scraper",
-    "instagram": "instagram-scraper", "playstore": "playstore-reviews-scraper",
-    "saham": "saham-scraper", "threads": "threads-scraper",
-    "x": "x-tweet-scraper", "youtube": "youtube-comments-scraper",
-}
-PROFILES = {"gmaps", "instagram", "threads", "x"}
+# Every scraper lives in scrapers/<source>/. Only Google Scholar is a package of the app itself.
+FOLDERS = {key: key for key in LABELS if key != "google_scholar"}
+PROFILES = {"gmaps", "gmaps_places", "instagram", "threads", "x"}
 ARCHIVE_LABELS = {"scholar": "Google Scholar (arsip)", "openalex": "OpenAlex (arsip)"}
 OTHER_LABELS = {**ARCHIVE_LABELS, "preprocessing": "Preprocessing", "gabungan": "Gabungan"}
 
@@ -26,13 +26,16 @@ def label(source):
     return LABELS.get(source) or OTHER_LABELS.get(source, source)
 
 
-# Google Maps keeps an isolated browser profile but offers no Google login.
-LOGINS = PROFILES - {"gmaps"}
+# Google Maps keeps isolated browser profiles but offers no Google login.
+LOGINS = PROFILES - {"gmaps", "gmaps_places"}
 FUNCTIONS = {
     "google_scholar": "collect",
-    "news": "run_scrape", "gmaps": "scrape_reviews", "instagram": "scrape_content",
+    "news": "run_scrape", "gmaps": "scrape_reviews", "gmaps_places": "search_places",
+    "instagram": "scrape_content",
     "playstore": "scrape_reviews", "saham": "scrape_prices", "threads": "scrape_posts",
     "x": "scrape_tweets", "youtube": "scrape_comments",
+    "worldbank": "scrape_indicators", "imf": "scrape_weo",
+    "bmkg": "collect_earthquakes", "openmeteo": "collect_weather", "sinta": "collect_sinta",
 }
 
 
@@ -41,23 +44,24 @@ def load(source):
     if source == "google_scholar":
         from workspace_app import scholar
         return scholar
-    folder = ROOT / FOLDERS[source]
-    path = folder / ("scraper/__init__.py" if source == "news" else "scraper.py")
+    folder = SCRAPERS / FOLDERS[source]
+    path = folder / ("__init__.py" if source == "news" else "scraper.py")
     name = f"_workspace_scraper_{source}"
-    options = {"submodule_search_locations": [str(path.parent)]} if source == "news" else {}
+    options = {"submodule_search_locations": [str(folder)]} if source == "news" else {}
     spec = importlib.util.spec_from_file_location(name, path, **options)
     module = importlib.util.module_from_spec(spec)
     sys.modules[name] = module
-    # Play Store's local parser and the three identical transport modules
-    # use absolute imports in the standalone apps.
-    sys.path.insert(0, str(folder))
+    # Play Store's local parser and the shared transport are imported by plain name.
+    search = [str(folder), str(SHARED)]
+    sys.path[:0] = search
     try:
         spec.loader.exec_module(module)
     except BaseException:
         sys.modules.pop(name, None)
         raise
     finally:
-        sys.path.remove(str(folder))
+        for entry in search:
+            sys.path.remove(entry)
     return module
 
 

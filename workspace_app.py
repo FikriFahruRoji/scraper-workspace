@@ -17,7 +17,10 @@ from workspace_app.views import source_page
 
 RESOURCES = Path(__file__).resolve().parent / "workspace_app" / "resources"
 st.set_page_config(page_title="nOCturnal Scraper", page_icon=str(RESOURCES / "icon.svg"), layout="wide")
-ui.inject_css()
+# Style and script elements take up a row of space wherever they sit, so they live in the sidebar,
+# not above the page content.
+with st.sidebar:
+    ui.inject_css()
 st.logo(str(RESOURCES / "blank.svg"), size="large")
 
 
@@ -70,9 +73,10 @@ with st.sidebar:
                              help="Sistem mengikuti pengaturan terang atau gelap di komputermu.")
         with st.container(key="sidebar-footer"):
             st.caption("Stealth Scraping by Fikri Fahru Roji")
-ui.apply_theme_pref(st.session_state.get("setting-theme", saved), ["/", *(f"/{page.url_path}" for page in
-                    [dataset, scraping, merge, preprocessing, running, pp_dataset, *analyses.values(), *forms.values()]
-                    if page.url_path)])
+with st.sidebar:
+    ui.apply_theme_pref(st.session_state.get("setting-theme", saved), ["/", *(f"/{page.url_path}" for page in
+                        [dataset, scraping, merge, preprocessing, running, pp_dataset, *analyses.values(),
+                         *forms.values()] if page.url_path)])
 
 page = st.navigation({"Data": [dataset, scraping, *forms.values()],
                "Preprocessing": [merge, preprocessing, running, pp_dataset],

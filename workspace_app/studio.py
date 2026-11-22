@@ -14,20 +14,32 @@ CATALOG = {
              "Kumpulkan artikel dari 10 portal berita Indonesia berdasarkan kata kunci dan tanggal"),
     "gmaps": (":material/location_on:", "Maps & Review",
               "Kumpulkan ulasan tempat dari Google Maps berdasarkan URL atau nama lokasi"),
+    "gmaps_places": (":material/place:", "Maps & Review",
+                     "Cari lokasi dan informasi tempat di Google Maps berdasarkan kata kunci"),
     "instagram": (":material/photo_camera:", "Media Sosial",
                   "Kumpulkan post dari profil, kata kunci, hashtag, atau komentar sebuah post"),
     "playstore": (":material/shop:", "Maps & Review",
                   "Kumpulkan ulasan aplikasi dari Google Play Store berdasarkan package ID"),
     "saham": (":material/candlestick_chart:", "Keuangan",
-              "Ambil harga historis OHLCV, dividen, dan split saham atau aset kripto"),
+              "Ambil harga historis OHLCV, dividen, dan split saham, aset kripto, atau kurs mata uang"),
     "threads": (":material/alternate_email:", "Media Sosial",
                 "Kumpulkan post Threads berdasarkan kata kunci dan rentang tanggal"),
     "x": (":material/tag:", "Media Sosial",
           "Kumpulkan tweet dari X berdasarkan kata kunci, profil, atau URL"),
     "youtube": (":material/smart_display:", "Media Sosial",
                 "Kumpulkan komentar dan balasan dari sebuah video YouTube"),
+    "worldbank": (":material/public:", "Ekonomi",
+                  "Ambil indikator pembangunan (PDB, inflasi, penduduk, dan lainnya) per negara dan tahun"),
+    "bmkg": (":material/vibration:", "Lingkungan",
+             "Ambil gempa terakhir Indonesia dari BMKG: magnitudo, kedalaman, lokasi, dan potensi tsunami"),
+    "openmeteo": (":material/partly_cloudy_day:", "Lingkungan",
+                  "Ambil cuaca harian atau per jam (suhu, hujan, angin) untuk lokasi mana pun, riwayat atau prakiraan"),
+    "sinta": (":material/badge:", "Akademik",
+              "Ambil penulis per afiliasi, profil dan metrik penulis, atau contoh dokumen dari SINTA"),
+    "imf": (":material/account_balance:", "Ekonomi",
+            "Ambil data ekonomi makro IMF (World Economic Outlook) beserta proyeksinya per negara"),
 }
-CATEGORIES = ["Media Sosial", "Berita", "Maps & Review", "Keuangan", "Akademik"]
+CATEGORIES = ["Media Sosial", "Berita", "Maps & Review", "Keuangan", "Akademik", "Ekonomi", "Lingkungan"]
 PAGE_SIZE = 8
 ROW = [3, 2.6, 3.2, 2]
 
@@ -74,17 +86,20 @@ def catalogue(manager):
     keys = [key for key, (_, group, text) in entries.items()
             if (category == "Semua" or group == category)
             and (not query.strip() or query.strip().lower() in f"{names[key]} {text} {group}".lower())]
-    keys.sort(key=lambda key: -usage.get(key, {}).get("jobs", 0))
+    keys.sort(key=lambda key: names[key].casefold())  # A-Z by the name shown on the row
     if not keys:
         st.info("Tidak ada sumber yang cocok dengan pencarian ini.")
         return
 
-    for key in keys:
-        source_row(key, names[key], entries[key][2], usage.get(key, {}))
+    with st.container(key="source-grid"):  # up to three columns, fewer on narrower screens (see ui.CSS)
+        for key in keys:
+            source_row(key, names[key], entries[key][2], usage.get(key, {}))
 
 
 def source_row(key, name, description, usage):
     with st.container(key=f"source-row-{key}", horizontal=True, vertical_alignment="center"):
+        if chip := ui.source_chip(key):
+            st.html(chip, width="content")
         with st.container(gap="xsmall"):
             st.html(
                 '<div class="source-description">'

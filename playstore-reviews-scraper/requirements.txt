@@ -1,4 +1,0 @@
-scrapling[all]==0.5.1
-streamlit==1.67.0
-pandas>=2.0
-google-play-scraper==1.2.7

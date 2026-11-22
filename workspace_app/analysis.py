@@ -14,7 +14,7 @@ import pandas as pd
 from workspace_app import preprocess as pp
 
 CLEAN_COLUMN = "teks_bersih"
-DATE_HINTS = ("tanggal", "waktu", "date", "time", "dimulai", "published", "created", "diterbitkan", "tgl")
+DATE_HINTS = ("tanggal", "waktu", "date", "time", "dimulai", "published", "created", "diterbitkan", "tgl", "tahun", "year")
 MAX_DOCUMENTS = 20_000
 PERIODS = {"D": "Harian", "W": "Mingguan", "ME": "Bulanan"}
 

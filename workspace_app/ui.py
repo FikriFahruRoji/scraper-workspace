@@ -4,9 +4,12 @@ The layout follows a studio-style workspace: a light page, white rounded cards
 with thin grey borders, a purple accent, option cards for choices and a
 catalogue of sources that leads to one form per source.
 """
+import base64
 from datetime import datetime, timezone
-
+from functools import lru_cache
 import json
+from pathlib import Path
+import re
 
 import streamlit as st
 
@@ -47,9 +50,11 @@ STATUS_HELP = {
 # Scraper error codes that reach the user as the job message.
 FRIENDLY_ERRORS = {
     "no_posts": "Tidak ada post yang ditemukan untuk input ini.",
+    "no_places": "Tidak ada tempat yang ditemukan untuk kata kunci ini.",
     "no_comments": "Tidak ada komentar yang ditemukan untuk post ini.",
     "login_required": "Platform meminta login. Klik Login platform lalu coba lagi.",
     "blocked": "Permintaan diblokir oleh platform. Coba lagi nanti.",
+    "browser_error": "Browser gagal dijalankan. Periksa koneksi lalu coba lagi.",
     "parse_error": "Format respons platform berubah sehingga data tidak bisa dibaca.",
     "timeout": "Batas waktu habis sebelum data selesai diambil.",
     "gangguan": "Koneksi ke platform terganggu.",
@@ -60,11 +65,11 @@ FRIENDLY_ERRORS = {
 LIGHT_TOKENS = """--bg: #EEF1F4; --surface: #F8FAFB; --raised: #FFFFFF; --ink: #101820; --muted: #4B5663;
   --line: #D5DCE4; --accent: #0E7490; --accent-ink: #F4FBFD; --accent-soft: rgba(14, 116, 144, .09);
   --danger: #B3261E; --danger-soft: rgba(179, 38, 30, .08); --danger-line: rgba(179, 38, 30, .35);
-  --warn: #8F4A0B; --shadow: 0 10px 24px -14px rgba(16, 24, 32, .28);"""
+  --warn: #8F4A0B; --shadow: 0 10px 24px -14px rgba(16, 24, 32, .28); --sidebar: #F8FAFB;"""
 DARK_TOKENS = """--bg: #0B1117; --surface: #121A22; --raised: #18232D; --ink: #E4EAF0; --muted: #9AA8B6;
   --line: #243240; --accent: #4DC0D8; --accent-ink: #04212A; --accent-soft: rgba(77, 192, 216, .12);
   --danger: #F07178; --danger-soft: rgba(240, 113, 120, .10); --danger-line: rgba(240, 113, 120, .4);
-  --warn: #E8A24A; --shadow: 0 10px 24px -14px rgba(0, 0, 0, .7);"""
+  --warn: #E8A24A; --shadow: 0 10px 24px -14px rgba(0, 0, 0, .7); --sidebar: #0E151C;"""
 
 
 def theme_type():
@@ -111,7 +116,7 @@ CSS = """
 [data-testid="stMainBlockContainer"] {
     width: 100%;
     max-width: none;
-    padding-top: 2.25rem;
+    padding-top: 2.75rem;
     padding-inline: clamp(1rem, 2vw, 2rem);
 }
 [data-testid="stSidebar"] { border-right: 1px solid var(--line); }
@@ -128,14 +133,19 @@ CSS = """
 [data-testid="stSidebarHeader"] > :has(> img[data-testid="stSidebarLogo"])::after { content: "nOCturnal Scraper";
     color: var(--ink); font-weight: 700; font-size: 1.05rem; letter-spacing: -.01em; white-space: nowrap; }
 
-/* Sidebar: settings and credit sit at the bottom. */
+/* Sidebar: settings and credit sit at the bottom and stay visible while the menu scrolls.
+   --sidebar matches [theme.*.sidebar] backgroundColor in .streamlit/config.toml. */
 [data-testid="stSidebarContent"] { display: flex; flex-direction: column; min-height: 100%; }
-[data-testid="stSidebarUserContent"] { flex: 1; display: flex; flex-direction: column; }
+/* Sticky on the user-content box, not the block inside it: a sticky element only moves within its
+   parent, and the block's own wrappers are exactly its height. This box holds only the block. */
+[data-testid="stSidebarUserContent"] { flex: 1; display: flex; flex-direction: column;
+    position: sticky; bottom: 0; z-index: 2; background: var(--sidebar); padding: 0; }
 [data-testid="stSidebarUserContent"] div:has(.st-key-sidebar-bottom) { flex: 1; display: flex; flex-direction: column; }
-.st-key-sidebar-bottom { margin-top: auto; justify-content: flex-end; }
+.st-key-sidebar-bottom { margin-top: auto; justify-content: flex-end; padding-bottom: 1rem; }
 .st-key-sidebar-footer { border-top: 1px solid var(--line); padding-top: .75rem; margin-top: .5rem; }
 .st-key-sidebar-footer [data-testid="stCaptionContainer"] { font-size: .8rem; }
-.settings-title { text-transform: uppercase; letter-spacing: .06em; font-size: .8rem; font-weight: 500; color: var(--muted); }
+.settings-title { text-transform: uppercase; letter-spacing: .06em; font-size: .8rem; font-weight: 500; color: var(--muted);
+    border-top: 1px solid var(--line); padding-top: .75rem; }
 
 /* Header card */
 .st-key-page-header { background: var(--surface); border: 1px solid var(--line); border-radius: 16px;
@@ -160,6 +170,19 @@ CSS = """
 .source-description h2 { margin: 0; padding: 0; font-size: 1.05rem; line-height: 1.3; }
 .source-description p { margin: 0; color: var(--muted); font-size: .875rem; line-height: 1.5; }
 [class*="st-key-source-row-"] .stButton button { white-space: nowrap; }
+/* Catalogue grid: never more than three columns, fewer when a column would be narrower than 340px, and never
+   wider than its container (a 375px phone has about 345px). */
+.st-key-source-grid { display: grid !important; gap: 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, max(340px, calc((100% - 2rem) / 3))), 1fr)); }
+.st-key-source-grid > div { display: flex; min-width: 0; }
+.st-key-source-grid [class*="st-key-source-row-"] { flex: 1; min-width: 0; }
+.source-chip { display: inline-flex; align-items: center; justify-content: center; flex: 0 0 44px;
+    width: 44px; height: 44px; border-radius: 12px; border: 1px solid var(--line); }
+.source-chip img { width: 24px; height: 24px; display: block; }
+.source-chip .glyph { width: 24px; height: 24px; display: block; background: currentColor;
+    -webkit-mask: var(--glyph) center / contain no-repeat; mask: var(--glyph) center / contain no-repeat; }
+.source-chip.brand { background: #F4F6F8; }  /* logos need a light ground in both themes */
+.source-chip.symbol { background: var(--accent-soft); color: var(--accent); border-color: transparent; }
 
 /* Plain panels */
 [class*="st-key-panel"] { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 20px 22px; }
@@ -258,6 +281,44 @@ def apply_theme_pref(pref, paths):
 def inject_css():
     st.html(CSS.replace("</style>", token_css(theme_type()) + "\n</style>", 1))
     st.html(f"<script>{THEME_SCRIPT}</script>", unsafe_allow_javascript=True)
+
+
+ICONS = Path(__file__).resolve().parent / "resources" / "icons"
+# Logos of the services a source reads from, in each brand's own color. Black logos use the page ink so they
+# stay readable. Sources without a logo of their own get a themed symbol instead.
+BRAND_COLORS = {"instagram": "#E4405F", "youtube": "#FF0000", "x": "#101820", "threads": "#101820",
+                "gmaps": "#4285F4", "gmaps_places": "#4285F4", "playstore": "#01875F",
+                "google_scholar": "#4285F4"}
+SVG_RE = re.compile(r'<svg[^>]*viewBox="([^"]+)"[^>]*>(.*)</svg>', re.S)
+
+
+@lru_cache(maxsize=None)
+def _icon_uri(source):
+    """A data: URI of a source icon read from resources/icons; empty when the file is missing.
+
+    st.html strips inline <svg>, but allows images and CSS values that carry a data: URI.
+    """
+    try:
+        match = SVG_RE.search((ICONS / f"{source}.svg").read_text(encoding="utf-8"))
+    except OSError:
+        return ""
+    if not match:
+        return ""
+    box, inner = match.groups()
+    inner = re.sub(r"<title>.*?</title>", "", inner, flags=re.S)
+    fill = BRAND_COLORS.get(source, "#000000")  # symbols are used as a mask, so only their shape matters
+    svg = f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="{box}" fill="{fill}">{inner}</svg>'
+    return "data:image/svg+xml;base64," + base64.b64encode(svg.encode("utf-8")).decode("ascii")
+
+
+def source_chip(source):
+    """HTML for the rounded icon that identifies a data source: its logo, or a symbol in the theme accent."""
+    uri = _icon_uri(source)
+    if not uri:
+        return ""
+    if source in BRAND_COLORS:
+        return f'<span class="source-chip brand"><img src="{uri}" alt="" width="24" height="24"></span>'
+    return f'<span class="source-chip symbol"><span class="glyph" style="--glyph:url({uri})"></span></span>'
 
 
 def fmt(number):

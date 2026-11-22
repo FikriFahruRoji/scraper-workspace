@@ -106,7 +106,13 @@ def time_limit(source):
                            "sudah terkumpul tetap disimpan.")
 
 
+OPEN_DATA = ("worldbank", "imf", "bmkg", "openmeteo", "sinta")
+
+
 def params_for(source, mode):
+    if source in OPEN_DATA:
+        from workspace_app.open_data_view import form
+        return form(source)
     if source == "google_scholar":
         from workspace_app.scholar_view import form
         return form(mode)
@@ -127,7 +133,7 @@ def params_for(source, mode):
                     end_date=end and end.isoformat(), headless=headless,
                     disable_resources=resources, max_tabs=tabs)
     if source == "saham":
-        symbol = text(source, "symbol", "Kode saham atau aset", placeholder="BBCA, AAPL, BTC-USD")
+        symbol = text(source, "symbol", "Kode saham atau aset", placeholder="BBCA, AAPL, BTC-USD, USD/IDR")
         market = choice("Pasar", MARKETS, key=k("market"))
         interval = choice("Interval", INTERVALS, key=k("interval"))
         start, end = date_bounds(source, 365)
@@ -140,6 +146,20 @@ def params_for(source, mode):
         empty = check(source, "empty", "Sertakan rating tanpa teks")
         return dict(url_input=url, method=method, sort=sort, max_minutes=time_limit(source),
                     max_reviews=count, include_empty_reviews=empty)
+    if source == "gmaps_places":
+        keyword = text(source, "keyword", "Kata kunci tempat",
+                       placeholder="Contoh: kopi bandung")
+        area = text(source, "area", "Area (opsional)", placeholder="Contoh: Bandung")
+        count = number(source, "count", "Jumlah tempat maksimum", 10, 120, 60, step=10,
+                       help="Google Maps biasanya berhenti memuat sekitar 120 hasil per pencarian.")
+        detail = check(source, "detail", "Ambil detail tiap tempat (lebih lambat)",
+                       help="Membuka halaman tiap tempat untuk melengkapi telepon, website, "
+                            "plus code, dan jam lengkap.")
+        detail_limit = (number(source, "detail_limit", "Batas tempat yang diambil detailnya",
+                               1, 60, 20, step=5) if detail else 0)
+        headless = check(source, "headless", "Jalankan browser di latar belakang", True)
+        return dict(keyword=keyword, area=area, max_places=count, detail_limit=detail_limit,
+                    headless=headless, max_minutes=time_limit(source))
     if source == "instagram":
         if mode == "comments":
             target = text(source, "post", "URL post atau reel", placeholder="https://www.instagram.com/p/…")
@@ -206,15 +226,16 @@ def params_for(source, mode):
 # --------------------------------------------------------------------------- #
 
 MARKETS = {"IDX": ("IDX", "Bursa Efek Indonesia"), "US": ("US", "Bursa Amerika"),
-           "CRYPTO": ("Kripto", "Pasangan USD"), "CUSTOM": ("Lainnya", "Kode apa adanya")}
+           "CRYPTO": ("Kripto", "Pasangan USD"), "FX": ("Kurs", "Pasangan mata uang, misalnya USD/IDR"),
+           "CUSTOM": ("Lainnya", "Kode apa adanya")}
 INTERVALS = {"1d": ("Harian", "Satu baris per hari bursa"), "1wk": ("Mingguan", "Satu baris per minggu"),
              "1mo": ("Bulanan", "Satu baris per bulan")}
 KINDS = {"username": ("Username", "Post dari satu akun"), "keyword": ("Kata kunci", "Post yang memuat kata"),
          "hashtag": ("Hashtag", "Post dengan tagar tertentu")}
 PARAM_LABELS = {"keyword": "Kata kunci pencarian", "username": "Username", "tweet_url": "URL tweet"}
 TARGETS = {"keyword": "Kata kunci", "query": "Pencarian", "post_input": "Post", "app_id": "Aplikasi",
-           "symbol": "Kode aset", "username": "Username", "tweet_url": "Tweet"}
-LIMITS = ("max_reviews", "max_comments", "max_posts", "count")
+           "symbol": "Kode aset", "username": "Username", "tweet_url": "Tweet", "area": "Area"}
+LIMITS = ("max_places", "max_reviews", "max_comments", "max_posts", "count")
 # Parameter name -> form field, for "Jalankan ulang".
 FIELDS = {
     "keyword": "keyword", "query": "query", "post_input": "post", "url_input": "url", "app_id": "package",
@@ -223,7 +244,7 @@ FIELDS = {
     "include_replies": "replies", "max_replies": "max_replies", "lang": "lang", "country": "country",
     "only_with_text": "only_text", "include_empty_reviews": "empty", "input_type": "kind",
     "max_reply_expand": "reply_limit", "headless": "headless", "disable_resources": "resources",
-    "max_tabs": "tabs",
+    "max_tabs": "tabs", "area": "area", "detail_limit": "detail_limit",
 }
 
 
@@ -249,6 +270,9 @@ def method_rows(job):
     rows = [("Sumber", LABELS.get(source, source) + (f" · {MODES[source][mode][0]}" if mode in MODES.get(source, {}) else ""))]
     if source == "instagram" and not params.get("comments") and params.get("input_type") in KINDS:
         rows.append(("Jenis pencarian", KINDS[params["input_type"]][0]))
+    if source in OPEN_DATA:
+        from workspace_app.open_data_view import method_rows as open_data_rows
+        rows += open_data_rows(job)
     if source == "google_scholar":
         from workspace_app.scholar_view import SORTS as SCHOLAR_SORTS
         rows.append(("Urutan", SCHOLAR_SORTS[mode][params["sort"]]))
@@ -278,6 +302,9 @@ def method_rows(job):
     limit = next((params[key] for key in LIMITS if key in params), None)
     if limit is not None:
         rows.append(("Batas data", "Sebanyak tersedia" if not limit else ui.fmt(limit)))
+    if source == "gmaps_places":
+        detail = params.get("detail_limit") or 0
+        rows.append(("Detail per tempat", f"{ui.fmt(detail)} tempat" if detail else "Tidak"))
     if params.get("max_minutes"):
         rows.append(("Batas waktu", f"{params['max_minutes']} menit"))
     rows.append(("Diambil", ui.long_date(job["started"])))
@@ -305,13 +332,20 @@ def recovery_hints(job):
     if job["source"] not in LABELS or (job["status"] == "completed" and job.get("count")):
         return []
     params, hints = job["params"], []
+    if job["source"] in OPEN_DATA:
+        from workspace_app.open_data_view import hints as open_data_hints
+        return open_data_hints(job)
     message = str(job.get("message") or "").lower()
     if job["source"] in LOGINS:
         hints.append("Pastikan kamu sudah login: buka form sumber lalu klik **Login platform**.")
     start, end = _as_date(params.get("start_date")), _as_date(params.get("end_date"))
     if start and end and (end - start).days < 60:
         hints.append("Lebarkan rentang tanggal.")
-    if params.get("keyword") or params.get("query"):
+    if job["source"] == "gmaps_places":
+        hints.append("Coba kata kunci yang lebih umum atau tambahkan area, misalnya nama kota.")
+        if params.get("detail_limit"):
+            hints.append("Kurangi batas detail atau matikan opsi detail agar lebih cepat.")
+    elif params.get("keyword") or params.get("query"):
         hints.append("Pakai kata kunci yang lebih umum, atau gabungkan beberapa dengan OR.")
     if job["source"] in SORTS and params.get("sort") in SORTS[job["source"]] and len(SORTS[job["source"]]) > 1:
         other = next(title for value, (title, _) in SORTS[job["source"]].items() if value != params["sort"])
@@ -349,6 +383,9 @@ def show_method(rows):
 def seed_form(source, params, project):
     """Pre-fill a source form with an earlier job's parameters, for "Jalankan ulang"."""
     state = st.session_state
+    if source in OPEN_DATA:
+        from workspace_app.open_data_view import seed
+        seed(source, params)
     if source == "google_scholar":
         for name, value in params.items():
             if name != "mode":
@@ -360,6 +397,8 @@ def seed_form(source, params, project):
             state[_key(source, "count")] = value
     if source == "playstore":
         state[_key(source, "score")] = params.get("score") or 0
+    if source == "gmaps_places":
+        state[_key(source, "detail")] = bool(params.get("detail_limit"))
     start, end = _as_date(params.get("start_date")), _as_date(params.get("end_date"))
     if start and end:
         state[_key(source, "start")], state[_key(source, "end")] = start, end
@@ -372,19 +411,27 @@ def seed_form(source, params, project):
 
 def summary_lines(source, mode, params):
     """Recap shown before starting: what will be collected and within which limits."""
+    if source in OPEN_DATA:
+        from workspace_app.open_data_view import summary
+        return summary(source, params)
     target = next((params[key] for key in ("keyword", "query", "post_input", "url_input", "app_id", "symbol",
                                             "username", "tweet_url") if params.get(key)), "")
     lines = [("Sumber", LABELS[source] + (f" · {MODES[source][mode][0]}" if source in MODES else "")),
              ("Input", target or "belum diisi")]
+    if params.get("area"):
+        lines.append(("Area", params["area"]))
     if params.get("start_date") and params.get("end_date"):
         start, end = (value if isinstance(value, date) else date.fromisoformat(value)
                       for value in (params["start_date"], params["end_date"]))
         lines.append(("Rentang tanggal", f"{start:%d/%m/%Y} – {end:%d/%m/%Y}"))
     if source == "news":
         lines.append(("Portal", f"{len(params['portal_keys'])} portal"))
-    limit = next((params[key] for key in ("max_reviews", "max_comments", "max_posts", "count") if key in params), None)
+    limit = next((params[key] for key in ("max_places", "max_reviews", "max_comments", "max_posts", "count")
+                  if key in params), None)
     if limit is not None:
         lines.append(("Jumlah data maksimum", "sebanyak tersedia" if limit == 0 else ui.fmt(limit)))
+    if params.get("detail_limit"):
+        lines.append(("Detail per tempat", f"{ui.fmt(params['detail_limit'])} tempat"))
     if "max_minutes" in params:
         lines.append(("Batas waktu", f"{params['max_minutes']} menit"))
     return lines
@@ -422,6 +469,10 @@ def file_stem(job):
 
 
 def validate(source, params):
+    if source in OPEN_DATA:
+        from workspace_app.open_data_view import check
+        check(params, source)
+        return
     if source == "google_scholar":
         if params["mode"] == "profile":
             load(source).extract_scholar_id(params["query"])
@@ -430,6 +481,7 @@ def validate(source, params):
     item_keys = {
         "google_scholar": ["query"],
         "news": ["keyword"], "saham": ["symbol"], "gmaps": ["url_input"],
+        "gmaps_places": ["keyword"],
         "instagram": ["post_input", "query"], "playstore": ["app_id"],
         "threads": ["keyword"], "x": ["keyword", "username", "tweet_url"],
         "youtube": ["url_input"],
@@ -584,10 +636,28 @@ def data_tabs(job, rows):
                 frame = frame[mask]
             st.dataframe(frame, width="stretch", hide_index=True)
         with detail_tab:
-            if job["source"] == "saham" and {"date", "close"}.issubset(frame):
+            if job["source"] in OPEN_DATA:
+                from workspace_app.open_data_view import chart
+                chart(frame, job["source"])
+            elif job["source"] == "saham" and {"date", "close"}.issubset(frame):
                 st.line_chart(frame.set_index("date")["close"])
                 if events := job["metadata"].get("events"):
                     st.dataframe(events, hide_index=True)
+            elif job["source"] == "gmaps_places":
+                if {"lintang", "bujur"}.issubset(frame):
+                    points = frame.dropna(subset=["lintang", "bujur"])
+                    if not points.empty:
+                        st.map(points, latitude="lintang", longitude="bujur")
+                if not frame.empty:
+                    stats = st.columns(3)
+                    stats[0].metric("Tempat", ui.fmt(len(frame)))
+                    if "rating" in frame:
+                        rating = pd.to_numeric(frame["rating"], errors="coerce").mean()
+                        stats[1].metric("Rating rata-rata", f"{rating:.2f}" if pd.notna(rating) else "-")
+                    if "kategori" in frame:
+                        stats[2].metric("Kategori", ui.fmt(frame["kategori"].nunique()))
+                    if "kategori" in frame:
+                        st.bar_chart(frame["kategori"].value_counts().head(15))
             else:
                 group = next((column for column in ("portal", "rating", "media", "username") if column in frame), None)
                 if group and not frame.empty:

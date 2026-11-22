@@ -17,9 +17,11 @@ parameters, preprocess, export to Excel/CSV for their analysis tools.
 
 ## Product Purpose
 
-nOCturnal Scraper (Scraper Workspace) gathers data from nine sources in one
+nOCturnal Scraper (Scraper Workspace) gathers data from fifteen sources in one
 application and prepares it for analysis: Berita (10 Indonesian news portals),
-Google Maps reviews, Instagram, Play Store reviews, Saham (OHLCV, dividends,
+Google Maps reviews and place search, Instagram, Play Store reviews, SINTA
+(Indonesian academic index), World Bank and IMF country statistics, BMKG earthquakes, Open-Meteo weather,
+Saham (OHLCV, dividends,
 splits), Threads, X/Twitter, and YouTube comments. Every job is stored with its
 parameters, log, and rows, grouped under a project name, and exported as Excel,
 CSV, or JSON. Success means a researcher gets a usable, traceable dataset for
@@ -42,7 +44,7 @@ a third party.
 
 - Runs locally via `Jalankan Scraper Workspace.command` (macOS) or `.bat`
   (Windows) at `http://127.0.0.1:8510`; can also run on a single-operator Linux
-  server reached over SSH (see DEPLOYMENT.md).
+  server reached over SSH (see docs/DEPLOYMENT.md).
 - One job (scraping, preprocessing, or platform login) runs at a time; jobs keep
   running while the user moves between pages and can be stopped.
 - Core flow: Data catalogue → source form → job runs → Data → Dataset Kamu
@@ -76,7 +78,7 @@ a third party.
 
 - Real job history on the developer's machine (e.g. 25 completed jobs, about
   100k rows across Berita, Google Maps, Instagram, Saham at the time of writing).
-- Documentation: README.md, DEPLOYMENT.md, STEALTH_MODE.md, PROJECT_MAP.md.
+- Documentation: README.md, docs/DEPLOYMENT.md, docs/STEALTH_MODE.md.
 - No testimonials, user counts, institutional adopters, or benchmarks exist;
   future work must not invent them.
 

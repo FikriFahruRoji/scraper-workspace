@@ -6,11 +6,11 @@ import sys
 from threading import Thread
 from time import perf_counter, sleep
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "news-scraper"))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scrapers"))
 
-from scraper import run_scrape
-from scraper.core import Portal
-from scraper.portals import PORTALS
+from news import run_scrape
+from news.core import Portal
+from news.portals import PORTALS
 
 
 class Fixture(BaseHTTPRequestHandler):

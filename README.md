@@ -1,17 +1,43 @@
 # Scraper Workspace
 
 Satu aplikasi Streamlit untuk mengumpulkan dan mengekspor data
-dari **9 sumber**. Workspace memakai **Scrapling stealth** untuk jalur
+dari **15 sumber**. Workspace memakai **Scrapling stealth** untuk jalur
 browser dan menyimpan riwayat pekerjaan di SQLite.
 
 | Sumber | Data yang tersedia |
 | --- | --- |
 | Google Scholar | Profil publik, metrik dan riwayat sitasi, atau publikasi berdasarkan kata kunci |
 | Berita | Artikel dari 10 portal Indonesia |
-| Google Maps dan Play Store | Ulasan tempat dan aplikasi |
+| SINTA | Penulis per afiliasi, profil dan metrik penulis (skor SINTA, Scopus, Google Scholar, WoS), serta contoh dokumen |
+| Google Maps Review | Ulasan tempat berdasarkan URL atau nama lokasi |
+| Google Maps Lokasi | Daftar tempat relevan berdasarkan kata kunci: alamat, rating, koordinat, dan detail opsional |
+| Play Store | Ulasan aplikasi berdasarkan package ID |
 | Instagram, Threads, dan X | Post, profil, pencarian, atau balasan sesuai sumber |
 | YouTube | Komentar video dan balasan |
-| Saham | Harga historis OHLCV, dividen, dan split |
+| Saham | Harga historis OHLCV, dividen, dan split; juga kripto dan kurs mata uang (pasar **Kurs**, misalnya `USD/IDR`) |
+| World Bank | Indikator pembangunan (PDB, inflasi, penduduk, dan lainnya) per negara dan tahun |
+| IMF | Data ekonomi makro World Economic Outlook per negara dan tahun, aktual dan proyeksi |
+| Gempa (BMKG) | Gempa terbaru, M 5,0+, dan dirasakan dari data terbuka BMKG: waktu WIB, magnitudo, kedalaman, koordinat, potensi tsunami |
+| Cuaca (Open-Meteo) | Cuaca harian atau per jam (suhu, hujan, angin, kelembapan, dan lainnya) untuk lokasi mana pun, riwayat sejak 1940 atau prakiraan 16 hari |
+
+BMKG hanya membuka gempa **terakhir** di tiap daftar (satu, lalu 15 untuk M 5,0+ dan 15 untuk yang
+dirasakan), bukan riwayat. Untuk membangun riwayat, ambil berkala lalu satukan di **Gabungkan Data**
+dengan opsi buang baris duplikat. Gempa yang muncul di beberapa daftar menjadi satu baris, dengan
+kolom `daftar` mencatat asalnya. Open-Meteo mencocokkan nama lokasi ke hasil pertama pencarian
+lokasinya, jadi periksa kolom `lokasi` (atau tulis koordinat `lintang,bujur`). Data cuaca berlisensi
+CC BY 4.0 untuk penggunaan non-komersial.
+
+World Bank, IMF, BMKG, dan Open-Meteo memakai API publik resmi tanpa kunci, login, atau browser. Nilai IMF dalam satuan
+penuh (jiwa, dolar AS), bukan juta atau miliar, dan setiap baris diberi tanda **aktual** atau
+**proyeksi**. Hasilnya berupa tabel panjang (satu baris per negara, indikator, dan tahun) dengan
+grafik per indikator di tab **Ringkasan**.
+
+SINTA memakai situs publik sinta.kemdiktisaintek.go.id tanpa login, lewat sesi Scrapling yang meniru Chrome
+(SINTA menolak klien non-browser dengan 403). Paket `sinta-scraper` 1.2.0 tidak dipakai karena masih menunjuk
+ke domain lama dan markup yang sudah berubah. Daftar penulis per afiliasi dan profil penulis stabil dan lengkap.
+**Daftar dokumen per penulis tidak lengkap**: SINTA hanya menampilkan 10 dokumen acak per daftar, tanpa halaman
+berikutnya, dan isinya berganti tiap diminta. Karena itu mode **Contoh dokumen** menandai setiap baris sebagai
+contoh. Untuk jumlah dokumen dan sitasi yang utuh, pakai mode **Profil penulis**.
 
 ## Jalankan di laptop
 
@@ -26,8 +52,7 @@ browser dan menyimpan riwayat pekerjaan di SQLite.
    Aplikasi lokal hanya mendengarkan di `127.0.0.1`.
 
 Jika macOS meminta menjalankan launcher dari Terminal, gunakan
-`bash "Jalankan Scraper Workspace.command"` dari folder proyek. Delapan
-scraper juga punya launcher lokal masing-masing.
+`bash "Jalankan Scraper Workspace.command"` dari folder proyek.
 
 ## Cara pakai
 
@@ -67,8 +92,8 @@ scraper juga punya launcher lokal masing-masing.
   sering muncul bersama). Analisis teks memakai kolom `teks_bersih` bila dataset sudah
   dipreprocessing, dan membersihkan teks sendiri bila belum (maksimal 20.000 teks pertama).
   Setiap tabel hasil bisa diunduh sebagai CSV.
-- Klik **Login platform** jika dibutuhkan oleh sumber (tidak tersedia untuk Google Maps). Masuk secara manual lewat
-  browser. Workspace memakai profil browser terpisah dari scraper mandiri.
+- Klik **Login platform** jika dibutuhkan oleh sumber (tidak tersedia untuk Google Maps Review dan Google Maps Lokasi).
+  Masuk secara manual lewat browser. Workspace memakai profil browser terpisah dari scraper mandiri.
 
 Data Workspace disimpan di `~/Library/Application Support/ScraperWorkspace`
 pada macOS atau `%LOCALAPPDATA%\ScraperWorkspace` pada Windows. Penghapusan
@@ -89,6 +114,23 @@ artikel pada pencarian dihitung dari hasil yang lolos filter tampilan.
 Unduhan mencakup seluruh dataset. Excel profil memiliki sheet **Artikel**,
 **Profil**, dan **Sitasi per Tahun**. Excel pencarian memiliki sheet **Hasil**
 dan **Pencarian**. CSV memuat tabel artikel dan JSON menyertakan metadata.
+
+## Google Maps Lokasi
+
+Di **Lakukan Scraping → Maps & Review → Google Maps Lokasi**, masukkan kata kunci
+tempat, misalnya `kopi bandung`, lalu atur jumlah hasil maksimum (10–120).
+Area opsional bisa ditambahkan untuk mempersempit pencarian. Hasil daftar memuat
+nama, kategori, alamat, rating, jumlah ulasan, status buka, koordinat, dan link
+tempat.
+
+Centang **Ambil detail tiap tempat** untuk membuka halaman masing-masing tempat
+dan melengkapi telepon, website, plus code, serta jam lengkap. Opsi ini jauh
+lebih lambat karena setiap tempat dibuka satu per satu.
+
+Hasil bisa dibuka dari **Dataset** dalam bentuk tabel, peta, dan grafik kategori,
+lalu diunduh sebagai Excel, CSV, atau JSON. Google Maps biasanya berhenti memuat
+sekitar 120 hasil per pencarian. Jika daftar kosong, coba kata kunci yang lebih
+umum atau tambahkan area.
 
 ## Preprocessing NLP
 
@@ -138,12 +180,39 @@ akhiran `_asli` yang unik agar nilainya tetap tersedia.
 ## Deploy ke Streamlit
 
 Entrypoint aplikasi adalah **`workspace_app.py`** dan dependensi Python ada di
-**`requirements.txt`** di root repositori. Lihat [Panduan deployment](DEPLOYMENT.md)
+**`requirements.txt`** di root repositori. Lihat [Panduan deployment](docs/DEPLOYMENT.md)
 untuk pemasangan di server Linux dan persiapan Streamlit Community Cloud.
 
 Versi saat ini memiliki **satu antrean, satu riwayat, dan satu set profil browser
 per instalasi**. Di server, seluruh pengunjung aplikasi akan berbagi state
 tersebut. Gunakan akses khusus operator selama isolasi per pengguna belum ada.
+
+## Struktur proyek
+
+```text
+workspace_app.py        Titik masuk Streamlit (menu, tema, pengaturan)
+workspace_app/          Aplikasi: halaman (studio, views, analysis_view, ...), pekerjaan dan
+                        riwayat (jobs), preprocessing, analisis, tema (ui), Google Scholar
+scrapers/               Satu folder per sumber (news, gmaps, gmaps_places, instagram, playstore,
+                        saham, threads, x, youtube, worldbank, imf), masing-masing berisi scraper.py
+scrapers/_shared/       Modul yang dipakai beberapa scraper (stealth_transport.py)
+tests/                  Uji otomatis
+tools/                  Pemeriksaan manual: transport, sumber publik, kinerja berita
+docs/                   Panduan deployment dan mode stealth
+.streamlit/             Konfigurasi Streamlit dan tema
+```
+
+Sumber baru ditambahkan dengan membuat `scrapers/<kunci>/scraper.py`, lalu mendaftarkan
+kuncinya di `workspace_app/sources.py` (`LABELS`, `FUNCTIONS`) dan `workspace_app/studio.py`
+(katalog).
+
+## Kredit ikon
+
+Logo sumber data (Instagram, YouTube, X, Threads, Google Maps, Google Play, Google Scholar) berasal dari
+[Simple Icons](https://simpleicons.org) (berkas SVG berlisensi CC0), dan ikon simbol lainnya dari
+[Material Symbols](https://fonts.google.com/icons) (Apache 2.0). Semuanya tersimpan lokal di
+`workspace_app/resources/icons/`. Merek dagang dan logo milik pemiliknya masing-masing; di sini dipakai
+hanya untuk menandai sumber data.
 
 ## Uji pengembang
 
@@ -153,6 +222,7 @@ Setelah memasang dependensi dan menyiapkan lingkungan, jalankan:
 python -m pip install pytest
 python -m pytest -q tests
 python tools/check_news_performance.py
+python tools/check_transport.py
 ```
 
 Uji Workspace mencakup pipeline preprocessing, form 9 sumber, pekerjaan tunggal, penghentian, pemulihan
