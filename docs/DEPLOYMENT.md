@@ -33,15 +33,12 @@ halaman Streamlit.
 
 ## Streamlit Community Cloud
 
-Pada saat deploy, gunakan repositori GitHub ini, branch `main`, entrypoint
+Pada saat deploy, gunakan repositori GitHub ini, branch `codex/streamlit-cloud`, entrypoint
 `workspace_app.py`, dan pilih Python **3.11** di **Advanced settings**.
 
-Sebelum deploy pertama, siapkan dan uji langkah pemasangan Chromium Patchright
-serta library Linux pada lingkungan host. Community Cloud memasang paket Python
-dari `requirements.txt`, tetapi launcher laptop bukan bagian dari startup Cloud.
-Konfigurasi lokal di `.streamlit/config.toml` mengunci bind ke `127.0.0.1:8510`.
-Konfigurasi tersebut perlu disesuaikan untuk host agar alamat dan port mengikuti
-runtime penayangan aplikasi.
+Community Cloud menentukan alamat dan port server. Paket Debian `chromium`
+dipasang melalui `packages.txt`. Scraper yang meminta Google Chrome atau browser
+bawaan Patchright tetap memerlukan pengujian di host.
 
 Untuk uji terbatas, gunakan aplikasi private dan beri akses hanya kepada
 operator. Riwayat SQLite, log, status pekerjaan, dan profil browser dibagi oleh
