@@ -11,14 +11,14 @@ LABELS = {
     "google_scholar": "Google Scholar",
     "news": "Berita", "gmaps": "Google Maps Review", "gmaps_places": "Google Maps Lokasi",
     "instagram": "Instagram",
-    "playstore": "Play Store", "saham": "Saham", "threads": "Threads",
+    "playstore": "Play Store", "appstore": "App Store", "saham": "Saham", "threads": "Threads",
     "x": "X / Twitter", "youtube": "YouTube", "worldbank": "World Bank", "imf": "IMF",
-    "bmkg": "Gempa (BMKG)", "openmeteo": "Cuaca (Open-Meteo)", "sinta": "SINTA",
+    "usgs": "Gempa (USGS)", "firms": "Titik Api (NASA FIRMS)", "pangan": "Harga Pangan (BI)", "openmeteo": "Cuaca (Open-Meteo)", "sinta": "SINTA",
 }
 # Every scraper lives in scrapers/<source>/. Only Google Scholar is a package of the app itself.
 FOLDERS = {key: key for key in LABELS if key != "google_scholar"}
 PROFILES = {"gmaps", "gmaps_places", "instagram", "threads", "x"}
-ARCHIVE_LABELS = {"scholar": "Google Scholar (arsip)", "openalex": "OpenAlex (arsip)"}
+ARCHIVE_LABELS = {"scholar": "Google Scholar (arsip)", "openalex": "OpenAlex (arsip)", "bmkg": "Gempa BMKG (arsip)"}
 OTHER_LABELS = {**ARCHIVE_LABELS, "preprocessing": "Preprocessing", "gabungan": "Gabungan"}
 
 
@@ -32,10 +32,10 @@ FUNCTIONS = {
     "google_scholar": "collect",
     "news": "run_scrape", "gmaps": "scrape_reviews", "gmaps_places": "search_places",
     "instagram": "scrape_content",
-    "playstore": "scrape_reviews", "saham": "scrape_prices", "threads": "scrape_posts",
+    "playstore": "scrape_reviews", "appstore": "scrape_reviews", "saham": "scrape_prices", "threads": "scrape_posts",
     "x": "scrape_tweets", "youtube": "scrape_comments",
     "worldbank": "scrape_indicators", "imf": "scrape_weo",
-    "bmkg": "collect_earthquakes", "openmeteo": "collect_weather", "sinta": "collect_sinta",
+    "usgs": "collect_earthquakes", "firms": "collect_hotspots", "pangan": "collect_prices", "openmeteo": "collect_weather", "sinta": "collect_sinta",
 }
 
 

@@ -880,32 +880,68 @@ def test_fx_market_turns_currency_pairs_into_yahoo_codes():
         normalize("dolar rupiah", "FX")
 
 
-QUAKE = {"Tanggal": "20 Nov 2026", "Jam": "20:09:01 WIB", "DateTime": "2026-11-20T13:09:01+00:00",
-         "Coordinates": "-3.88,122.51", "Lintang": "3.88 LS", "Bujur": "122.51 BT", "Magnitude": "5.2",
-         "Kedalaman": "10 km", "Wilayah": "Laut 10 km Utara Kendari", "Potensi": "Tidak berpotensi tsunami",
-         "Dirasakan": "-", "Shakemap": "gempa.mmi.jpg"}
+def quake(number, minute=0, mag=5.2, depth=10.0):
+    return {"id": f"us{number}", "geometry": {"coordinates": [122.51, -3.88, depth]},
+            "properties": {"time": 1795266541000 + minute * 60_000, "mag": mag, "magType": "mww",
+                           "place": "10 km N of Kendari, Indonesia", "tsunami": 0, "felt": 12, "cdi": 3.1,
+                           "mmi": None, "alert": "green", "status": "reviewed", "sig": 416, "net": "us",
+                           "url": "https://earthquake.usgs.gov/earthquakes/eventpage/us1"}}
 
 
-def test_bmkg_rows_are_numeric_wib_and_merged_across_feeds(monkeypatch):
+def test_usgs_rows_are_numeric_wib_and_deduplicated(monkeypatch):
     import json
-    module = sources.load("bmkg")
-    felt = {**QUAKE, "Dirasakan": "III Kota Kendari", "Potensi": ""}
-    feeds = {"autogempa": {"Infogempa": {"gempa": QUAKE}},
-             "gempaterkini": {"Infogempa": {"gempa": [QUAKE]}},
-             "gempadirasakan": {"Infogempa": {"gempa": [felt, {**QUAKE, "DateTime": "2026-11-19T01:00:00+00:00",
-                                                               "Magnitude": "3.1"}]}}}
-    monkeypatch.setattr(module, "get", lambda url, **kwargs: json.dumps(feeds[url.rsplit("/", 1)[1][:-5]]).encode())
-    result = module.collect_earthquakes(["terbaru", "m5", "dirasakan"])
+    from datetime import date
+    module = sources.load("usgs")
+    urls = []
+
+    def fake(url, **kwargs):
+        urls.append(url)
+        return json.dumps({"features": [quake(1), quake(1), quake(2, minute=5, mag=4.6),
+                                        {"id": "bad", "properties": {}, "geometry": {}}]}).encode()
+
+    monkeypatch.setattr(module, "get", fake)
+    result = module.collect_earthquakes("indonesia", date(2026, 11, 1), date(2026, 11, 20), 4.5)
     rows = result["rows"]
-    assert len(rows) == 2 and result["error"] is None  # the same quake in three feeds is one row
+    assert len(rows) == 2 and result["error"] is None and len(urls) == 1  # duplicates and unreadable rows dropped
+    assert "minmagnitude=4.5" in urls[0] and "minlatitude=-11.5" in urls[0] and "eventtype=earthquake" in urls[0]
     top = rows[0]
-    assert top["waktu"] == "2026-11-20T20:09:01+07:00" and top["magnitudo"] == 5.2 and top["kedalaman_km"] == 10.0
-    assert (top["lintang"], top["bujur"]) == (-3.88, 122.51)  # south latitude keeps its sign
-    assert top["daftar"] == "Terbaru, M 5,0+, Dirasakan"
-    assert top["dirasakan"] == "III Kota Kendari" and top["peta_guncangan"].endswith("/gempa.mmi.jpg")
+    assert top["id_kejadian"] == "us2" and top["waktu"].endswith("+07:00") and top["waktu_utc"].endswith("+00:00")
+    assert (top["lintang"], top["bujur"], top["kedalaman_km"]) == (-3.88, 122.51, 10.0)  # south keeps its sign
+    assert top["magnitudo"] == 4.6 and top["peringatan_pager"] == "hijau" and top["potensi_tsunami"] == "tidak"
+    world = module.collect_earthquakes("dunia", date(2026, 11, 1), date(2026, 11, 2), 6)
+    assert "minlatitude" not in urls[-1] and world["rows"]
     monkeypatch.setattr(module, "get", lambda url, **kwargs: b"{not json")
-    broken = module.collect_earthquakes(["terbaru"])
+    broken = module.collect_earthquakes("indonesia", date(2026, 11, 1), date(2026, 11, 2))
     assert broken["rows"] == [] and broken["error"]
+
+
+def test_usgs_splits_capped_windows_and_honours_count(monkeypatch):
+    import json
+    from datetime import date
+    module = sources.load("usgs")
+    monkeypatch.setattr(module, "CAP", 3)
+    calls = []
+
+    def fake(url, **kwargs):
+        calls.append(url)
+        window = [part.split("=")[1] for part in url.split("&") if part.startswith(("starttime", "endtime"))]
+        number = len(calls)
+        return json.dumps({"features": [quake(f"{number}{i}", minute=number * 10 + i) for i in range(3 if number == 1 else 2)]}).encode()
+
+    monkeypatch.setattr(module, "get", fake)
+    result = module.collect_earthquakes("indonesia", date(2026, 11, 1), date(2026, 11, 10))
+    assert len(calls) == 3 and len(result["rows"]) == 4  # first window hit the cap, then two halves
+    limited = module.collect_earthquakes("indonesia", date(2026, 11, 1), date(2026, 11, 10), count=1)
+    assert len(limited["rows"]) == 1
+
+
+def test_usgs_year_windows_cover_range_newest_first():
+    module = sources.load("usgs")
+    from datetime import date
+    first, last = module.day_range(date(2020, 1, 1), date(2026, 11, 20))
+    spans = list(module.yearly(first, last))
+    assert spans[0][1] == last and spans[-1][0] == first
+    assert all(later[1] == earlier[0] for earlier, later in zip(spans, spans[1:]))
 
 
 def test_openmeteo_resolves_places_and_reports_the_ones_it_cannot(monkeypatch):
@@ -946,7 +982,8 @@ def test_nature_form_validation_and_rerun_seed(tmp_path):
     base = {"locations": ["Bandung"], "mode": "history", "interval": "daily", "variables": ["precipitation_sum"],
             "start_date": today - timedelta(days=10), "end_date": today, "forecast_days": 7, "drop_empty": True}
     validate("openmeteo", base)
-    validate("bmkg", {"feeds": ["m5"]})
+    validate("usgs", {"region": "indonesia", "min_magnitude": 4.5, "start_date": today - timedelta(days=10),
+                      "end_date": today, "count": 0})
     for change, text in ((dict(locations=[]), "lokasi"), (dict(variables=[]), "variabel"),
                          (dict(end_date=today + timedelta(days=1)), "Prakiraan"),
                          (dict(start_date=today + timedelta(days=1), end_date=today), "Tanggal mulai"), (dict(start_date=date(1900, 1, 1)), "1940"),
@@ -954,8 +991,16 @@ def test_nature_form_validation_and_rerun_seed(tmp_path):
                          (dict(locations=[str(n) for n in range(25)]), "Maksimal")):
         with __import__("pytest").raises(ValueError, match=text):
             check({**base, **change}, "openmeteo")
-    with __import__("pytest").raises(ValueError, match="daftar gempa"):
-        check({"feeds": []}, "bmkg")
+    quakes = {"region": "indonesia", "min_magnitude": 4.5, "start_date": today - timedelta(days=10),
+              "end_date": today, "count": 0}
+    for change, text in ((dict(start_date=today + timedelta(days=1), end_date=today), "Tanggal mulai"),
+                         (dict(end_date=today + timedelta(days=1)), "melewati hari ini"),
+                         (dict(start_date=date(1800, 1, 1)), "1900"), (dict(min_magnitude=11), "Magnitudo"),
+                         (dict(region="custom", south=5, north=-5, west=90, east=100), "Lintang selatan"),
+                         (dict(region="custom", south=-5, north=5, west=100, east=90), "Bujur barat"),
+                         (dict(region="custom", south=None, north=5, west=90, east=100), "Isi batas")):
+        with __import__("pytest").raises(ValueError, match=text):
+            check({**quakes, **change}, "usgs")
 
     script = _page_script(tmp_path, """
 from workspace_app.views import scraper_form, seed_form
@@ -985,7 +1030,7 @@ quakes = pd.DataFrame({"waktu": ["2026-11-20T20:09:01+07:00", "2026-11-19T08:00:
 weather = pd.DataFrame({"lokasi": ["Bandung", "Bandung", "Surabaya", "Surabaya"], "lintang": [-6.9] * 4,
                         "bujur": [107.6] * 4, "tanggal": ["2026-11-01", "2026-11-02"] * 2,
                         "suhu_maks_c": [30.1, 31.0, 33.0, 34.2], "hujan_mm": [1.0, 0.0, 0.2, 0.0]})
-chart(quakes, "bmkg")
+chart(quakes, "usgs")
 chart(weather, "openmeteo")
 """)
     at = AppTest.from_file(script, default_timeout=30).run()

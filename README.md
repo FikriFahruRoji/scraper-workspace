@@ -1,7 +1,7 @@
 # Scraper Workspace
 
 Satu aplikasi Streamlit untuk mengumpulkan dan mengekspor data
-dari **15 sumber**. Workspace memakai **Scrapling stealth** untuk jalur
+dari **18 sumber**. Workspace memakai **Scrapling stealth** untuk jalur
 browser dan menyimpan riwayat pekerjaan di SQLite.
 
 | Sumber | Data yang tersedia |
@@ -12,22 +12,32 @@ browser dan menyimpan riwayat pekerjaan di SQLite.
 | Google Maps Review | Ulasan tempat berdasarkan URL atau nama lokasi |
 | Google Maps Lokasi | Daftar tempat relevan berdasarkan kata kunci: alamat, rating, koordinat, dan detail opsional |
 | Play Store | Ulasan aplikasi berdasarkan package ID |
+| App Store | Ulasan aplikasi iOS berdasarkan ID atau link App Store, per toko negara (hingga 500 ulasan terbaru atau paling membantu per aplikasi) |
 | Instagram, Threads, dan X | Post, profil, pencarian, atau balasan sesuai sumber |
 | YouTube | Komentar video dan balasan |
 | Saham | Harga historis OHLCV, dividen, dan split; juga kripto dan kurs mata uang (pasar **Kurs**, misalnya `USD/IDR`) |
 | World Bank | Indikator pembangunan (PDB, inflasi, penduduk, dan lainnya) per negara dan tahun |
 | IMF | Data ekonomi makro World Economic Outlook per negara dan tahun, aktual dan proyeksi |
-| Gempa (BMKG) | Gempa terbaru, M 5,0+, dan dirasakan dari data terbuka BMKG: waktu WIB, magnitudo, kedalaman, koordinat, potensi tsunami |
+| Harga Pangan (BI) | Harga harian 21 komoditas pangan strategis (beras, cabai, bawang, daging, telur, minyak goreng, gula) per provinsi atau nasional dan jenis pasar, dari PIHPS Bank Indonesia |
+| Gempa (USGS) | Riwayat gempa Indonesia, seluruh dunia, atau kotak koordinat sendiri dari katalog USGS sejak 1900: waktu WIB dan UTC, magnitudo, kedalaman, koordinat, potensi tsunami, laporan dirasakan |
+| Titik Api (NASA FIRMS) | Titik api (hotspot) satelit VIIRS atau MODIS per negara dan tahun sejak 2000: lokasi, waktu WIB dan UTC, daya radiasi api (FRP), keyakinan, siang atau malam, dan jenis |
 | Cuaca (Open-Meteo) | Cuaca harian atau per jam (suhu, hujan, angin, kelembapan, dan lainnya) untuk lokasi mana pun, riwayat sejak 1940 atau prakiraan 16 hari |
 
-BMKG hanya membuka gempa **terakhir** di tiap daftar (satu, lalu 15 untuk M 5,0+ dan 15 untuk yang
-dirasakan), bukan riwayat. Untuk membangun riwayat, ambil berkala lalu satukan di **Gabungkan Data**
-dengan opsi buang baris duplikat. Gempa yang muncul di beberapa daftar menjadi satu baris, dengan
-kolom `daftar` mencatat asalnya. Open-Meteo mencocokkan nama lokasi ke hasil pertama pencarian
+Katalog USGS memuat gempa seluruh dunia sejak 1900. Satu permintaan dibatasi 20.000 kejadian, jadi
+rentang tanggal dipecah otomatis. Untuk Indonesia, M 4,5+ berarti sekitar 1.000 gempa per tahun; turunkan
+magnitudo hanya untuk rentang pendek. Kotak Indonesia (11,5°LS–6,5°LU, 94°–142°BT) mencakup sedikit wilayah
+tetangga, jadi cek kolom `tempat`. Data USGS adalah domain publik.
+
+Titik api NASA FIRMS diambil dari arsip standar per negara dan tahun (tanpa kunci). Arsip baru lengkap
+setelah tahun kalender berakhir, jadi data terbaru adalah tahun lalu; data mendekati waktu nyata dan
+area bebas memerlukan MAP_KEY pribadi dan belum didukung. VIIRS (375 m) mulai 2012, MODIS (1 km) mulai 2000.
+Satu tahun VIIRS untuk Indonesia bisa ratusan ribu titik, jadi ada batas jumlah titik bawaan 200.000.
+
+Open-Meteo mencocokkan nama lokasi ke hasil pertama pencarian
 lokasinya, jadi periksa kolom `lokasi` (atau tulis koordinat `lintang,bujur`). Data cuaca berlisensi
 CC BY 4.0 untuk penggunaan non-komersial.
 
-World Bank, IMF, BMKG, dan Open-Meteo memakai API publik resmi tanpa kunci, login, atau browser. Nilai IMF dalam satuan
+World Bank, IMF, USGS, NASA FIRMS, Open-Meteo, dan Harga Pangan (PIHPS BI) memakai API publik tanpa kunci, login, atau browser. Nilai IMF dalam satuan
 penuh (jiwa, dolar AS), bukan juta atau miliar, dan setiap baris diberi tanda **aktual** atau
 **proyeksi**. Hasilnya berupa tabel panjang (satu baris per negara, indikator, dan tahun) dengan
 grafik per indikator di tab **Ringkasan**.
@@ -193,8 +203,8 @@ tersebut. Gunakan akses khusus operator selama isolasi per pengguna belum ada.
 workspace_app.py        Titik masuk Streamlit (menu, tema, pengaturan)
 workspace_app/          Aplikasi: halaman (studio, views, analysis_view, ...), pekerjaan dan
                         riwayat (jobs), preprocessing, analisis, tema (ui), Google Scholar
-scrapers/               Satu folder per sumber (news, gmaps, gmaps_places, instagram, playstore,
-                        saham, threads, x, youtube, worldbank, imf), masing-masing berisi scraper.py
+scrapers/               Satu folder per sumber (news, gmaps, gmaps_places, instagram, playstore, appstore,
+                        saham, threads, x, youtube, worldbank, imf, usgs, firms, openmeteo, sinta, pangan), masing-masing berisi scraper.py
 scrapers/_shared/       Modul yang dipakai beberapa scraper (stealth_transport.py)
 tests/                  Uji otomatis
 tools/                  Pemeriksaan manual: transport, sumber publik, kinerja berita

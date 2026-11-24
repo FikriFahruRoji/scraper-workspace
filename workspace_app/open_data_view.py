@@ -5,7 +5,7 @@ import re
 import pandas as pd
 import streamlit as st
 
-from workspace_app import nature_view, sinta_view
+from workspace_app import firms_view, nature_view, pangan_view, sinta_view
 from workspace_app.countries import COUNTRIES, clean_codes
 
 SOURCES = ("worldbank", "imf")
@@ -13,7 +13,7 @@ SOURCES = ("worldbank", "imf")
 
 def _other(source):
     """The view module that owns `source` when it is not a World Bank or IMF source, else None."""
-    return next((module for module in (nature_view, sinta_view) if source in module.SOURCES), None)
+    return next((module for module in (firms_view, nature_view, pangan_view, sinta_view) if source in module.SOURCES), None)
 
 NAMES = {"worldbank": "World Bank", "imf": "IMF (World Economic Outlook)"}
 FINDER = {

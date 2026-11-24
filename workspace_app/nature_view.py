@@ -1,15 +1,15 @@
-"""Forms and result views for the BMKG earthquake and Open-Meteo weather sources."""
+"""Forms and result views for the USGS earthquake and Open-Meteo weather sources."""
 from datetime import date
 
 import pandas as pd
 import streamlit as st
 
-SOURCES = ("bmkg", "openmeteo")
-NAMES = {"bmkg": "Gempa BMKG", "openmeteo": "Cuaca Open-Meteo"}
-FEEDS = {
-    "terbaru": ("Terbaru", "Gempa terakhir, lengkap dengan peta guncangan"),
-    "m5": ("M 5,0+", "15 gempa terakhir bermagnitudo 5,0 atau lebih"),
-    "dirasakan": ("Dirasakan", "15 gempa terakhir yang dirasakan warga"),
+SOURCES = ("usgs", "openmeteo")
+NAMES = {"usgs": "Gempa USGS", "openmeteo": "Cuaca Open-Meteo"}
+REGIONS = {
+    "indonesia": ("Indonesia", "Kotak lintang 11,5°LS–6,5°LU dan bujur 94°–142°BT, termasuk sedikit wilayah tetangga"),
+    "dunia": ("Seluruh dunia", "Tanpa batas wilayah; naikkan magnitudo minimum agar hasil tidak terlalu banyak"),
+    "custom": ("Kotak sendiri", "Isi batas lintang dan bujur"),
 }
 MODES = {"history": ("Riwayat", "Cuaca masa lalu sampai hari ini"),
          "forecast": ("Prakiraan", "Perkiraan sampai 16 hari ke depan")}
@@ -46,13 +46,30 @@ def form(source):
     """The form fields; returns the parameters the scraper takes."""
     from workspace_app.views import _initial, _key, choice, date_bounds, number
 
-    if source == "bmkg":
-        feeds = st.multiselect("Daftar gempa", list(FEEDS), key=_key(source, "feeds"),
-                               format_func=lambda name: f"{FEEDS[name][0]} · {FEEDS[name][1]}",
-                               **_initial(_key(source, "feeds"), list(FEEDS), "default"))
-        st.caption("BMKG hanya membuka gempa terakhir di tiap daftar, bukan riwayat panjang. Untuk membangun "
-                   "riwayat, ambil berkala lalu satukan di Gabungkan Data dengan opsi buang baris duplikat.")
-        return {"feeds": feeds}
+    if source == "usgs":
+        region = choice("Wilayah", REGIONS, key=_key(source, "region"))
+        box = {}
+        if region == "custom":
+            first, second = st.columns(2)
+            third, fourth = st.columns(2)
+            def corner(column, label, low, high, default, name, **kwargs):
+                key = _key(source, name)
+                return column.number_input(label, low, high, key=key, **_initial(key, default, "value"), **kwargs)
+
+            box = {"south": corner(first, "Lintang selatan", -90.0, 90.0, -11.5, "south",
+                                   help="Selatan bernilai negatif, misalnya -11,5 untuk 11,5°LS."),
+                   "north": corner(second, "Lintang utara", -90.0, 90.0, 6.5, "north"),
+                   "west": corner(third, "Bujur barat", -180.0, 180.0, 94.0, "west"),
+                   "east": corner(fourth, "Bujur timur", -180.0, 180.0, 142.0, "east")}
+        minimum = st.number_input("Magnitudo minimum", 0.0, 9.5, step=0.1, format="%.1f",
+                                  key=_key(source, "minmag"), **_initial(_key(source, "minmag"), 4.5),
+                                  help="Gempa kecil sangat banyak. Untuk Indonesia, M 4,5+ berarti sekitar 1.000 gempa per tahun.")
+        start, end = date_bounds(source)
+        limit = number(source, "count", "Jumlah gempa maksimum", 0, 200_000, 0, step=100,
+                       help="0 mengambil semua gempa yang ditemukan dalam batas waktu.")
+        st.caption("Data: USGS Earthquake Catalog, domain publik. Waktu ditulis dalam WIB dan UTC.")
+        return {"region": region, "min_magnitude": minimum, "start_date": start, "end_date": end, "count": limit,
+                **box}
 
     places = st.text_area("Lokasi", key=_key(source, "places"), height=110,
                           placeholder="Bandung\nSurabaya\n-6.2,106.8",
@@ -81,9 +98,29 @@ def form(source):
 
 def check(params, source):
     """Raise ValueError with a plain message when the form cannot be run."""
-    if source == "bmkg":
-        if not params["feeds"]:
-            raise ValueError("Pilih minimal satu daftar gempa.")
+    if source == "usgs":
+        if not (params.get("start_date") and params.get("end_date")):
+            raise ValueError("Pilih tanggal mulai dan selesai.")
+        start, end = _day(params["start_date"]), _day(params["end_date"])
+        if start > end:
+            raise ValueError("Tanggal mulai harus sebelum tanggal selesai.")
+        if end > date.today():
+            raise ValueError("Tanggal selesai tidak boleh melewati hari ini.")
+        if start < date(1900, 1, 1):
+            raise ValueError("Katalog USGS dimulai tahun 1900.")
+        if not 0 <= params["min_magnitude"] <= 10:
+            raise ValueError("Magnitudo minimum harus antara 0 dan 10.")
+        if params["region"] == "custom":
+            south, north = params.get("south"), params.get("north")
+            west, east = params.get("west"), params.get("east")
+            if None in (south, north, west, east):
+                raise ValueError("Isi batas lintang dan bujur.")
+            if not (-90 <= south <= north <= 90):
+                raise ValueError("Lintang selatan harus lebih kecil dari lintang utara, dalam -90 sampai 90.")
+            if not (-180 <= west <= east <= 180):
+                raise ValueError("Bujur barat harus lebih kecil dari bujur timur, dalam -180 sampai 180.")
+        elif params["region"] not in REGIONS:
+            raise ValueError("Wilayah tidak dikenali.")
         return
     if not params["locations"]:
         raise ValueError("Isi minimal satu lokasi.")
@@ -105,6 +142,13 @@ def check(params, source):
             raise ValueError("Data per jam dibatasi 1 tahun per pengambilan. Persempit tanggal atau pilih Harian.")
 
 
+def _region(params):
+    if params.get("region") == "custom":
+        return (f"Kotak {params.get('south')}…{params.get('north')} LU, "
+                f"{params.get('west')}…{params.get('east')} BT")
+    return REGIONS.get(params.get("region"), ("-",))[0]
+
+
 def _places_text(places):
     shown = ", ".join(places[:3])
     return shown + (f" dan {len(places) - 3} lainnya" if len(places) > 3 else "")
@@ -120,9 +164,10 @@ def _period(params):
 
 
 def summary(source, params):
-    if source == "bmkg":
-        names = ", ".join(FEEDS[feed][0] for feed in params["feeds"]) or "belum dipilih"
-        return [("Sumber", NAMES[source]), ("Daftar", names), ("Isi", "gempa terakhir pada tiap daftar")]
+    if source == "usgs":
+        return [("Sumber", NAMES[source]), ("Wilayah", _region(params)),
+                ("Magnitudo", f"{params['min_magnitude']:.1f}+".replace(".", ",")), ("Periode", _period(params)),
+                ("Batas data", f"{params['count']:,}".replace(",", ".") if params.get("count") else "Semua yang ditemukan")]
     return [("Sumber", NAMES[source]), ("Lokasi", _places_text(params["locations"]) or "belum diisi"),
             ("Periode", _period(params)), ("Rincian", INTERVALS[params["interval"]][0]),
             ("Variabel", f"{len(params['variables'])} variabel")]
@@ -131,8 +176,9 @@ def summary(source, params):
 def method_rows(job):
     """Rows describing how the job collected its data, for the dataset dialog."""
     params = job["params"]
-    if job["source"] == "bmkg":
-        return [("Daftar", ", ".join(FEEDS[feed][0] for feed in params.get("feeds", [])))]
+    if job["source"] == "usgs":
+        return [("Wilayah", _region(params)), ("Magnitudo minimum", f"{params.get('min_magnitude', 0):.1f}".replace(".", ",")),
+                ("Periode", _period(params))]
     names = VARIABLES[params["interval"]]
     return [("Lokasi", "; ".join(params.get("locations", []))), ("Jenis data", MODES[params["mode"]][0]),
             ("Periode", _period(params)), ("Rincian", INTERVALS[params["interval"]][0]),
@@ -144,8 +190,15 @@ def seed(source, params):
     from workspace_app.views import _key
 
     state = st.session_state
-    if source == "bmkg":
-        state[_key(source, "feeds")] = [feed for feed in params.get("feeds", []) if feed in FEEDS]
+    if source == "usgs":
+        state[_key(source, "region")] = params.get("region", "indonesia")
+        state[_key(source, "minmag")] = float(params.get("min_magnitude", 4.5))
+        state[_key(source, "count")] = params.get("count", 0)
+        for name in ("south", "north", "west", "east"):
+            if params.get(name) is not None:
+                state[_key(source, name)] = params[name]
+        if params.get("start_date") and params.get("end_date"):
+            state[_key(source, "start")], state[_key(source, "end")] = _day(params["start_date"]), _day(params["end_date"])
         return
     state[_key(source, "places")] = "\n".join(params.get("locations", []))
     state[_key(source, "mode")] = params.get("mode", "history")
@@ -160,9 +213,10 @@ def seed(source, params):
 
 def hints(job):
     """What to try after an empty or failed run."""
-    if job["source"] == "bmkg":
-        return ["Periksa koneksi internet; layanan data.bmkg.go.id kadang tidak tersedia sementara.",
-                "Coba lagi beberapa menit kemudian."]
+    if job["source"] == "usgs":
+        return ["Turunkan magnitudo minimum atau perluas rentang tanggal; gempa kecil jarang tercatat di daerah tertentu.",
+                "Pastikan kotak koordinat benar: lintang selatan bernilai negatif dan bujur barat lebih kecil dari bujur timur.",
+                "Bila earthquake.usgs.gov sedang lambat, coba lagi beberapa menit kemudian."]
     return ["Periksa penulisan nama lokasi, atau tulis koordinat lintang,bujur (misalnya -6.2,106.8).",
             "Pastikan tanggal tidak melewati hari ini dan tidak sebelum 1940.",
             "Kurangi jumlah lokasi atau persempit tanggal bila Open-Meteo membatasi permintaan."]
@@ -170,11 +224,15 @@ def hints(job):
 
 def chart(frame, source):
     """Earthquakes on a map; weather as one line per place."""
-    if source == "bmkg" and {"lintang", "bujur", "magnitudo"} <= set(frame):
+    if source == "usgs" and {"lintang", "bujur", "magnitudo"} <= set(frame):
         cols = st.columns(3)
         cols[0].metric("Gempa", len(frame), border=True)
         cols[1].metric("Magnitudo tertinggi", f"{frame['magnitudo'].max():.1f}".replace(".", ","), border=True)
         cols[2].metric("Terdalam", f"{frame['kedalaman_km'].max():.0f} km", border=True)
+        if "waktu" in frame and len(frame) > 1:
+            months = pd.to_datetime(frame["waktu"].str[:7], format="%Y-%m", errors="coerce").dropna()
+            if months.nunique() > 1:
+                st.bar_chart(months.dt.to_period("M").value_counts().sort_index().rename_axis("bulan").rename("gempa"))
         points = frame.rename(columns={"lintang": "latitude", "bujur": "longitude"}).dropna(
             subset=["latitude", "longitude"]).assign(ukuran=lambda data: data["magnitudo"].fillna(1) ** 2 * 4000)
         st.map(points, latitude="latitude", longitude="longitude", size="ukuran")

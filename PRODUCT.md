@@ -17,10 +17,10 @@ parameters, preprocess, export to Excel/CSV for their analysis tools.
 
 ## Product Purpose
 
-nOCturnal Scraper (Scraper Workspace) gathers data from fifteen sources in one
+nOCturnal Scraper (Scraper Workspace) gathers data from eighteen sources in one
 application and prepares it for analysis: Berita (10 Indonesian news portals),
-Google Maps reviews and place search, Instagram, Play Store reviews, SINTA
-(Indonesian academic index), World Bank and IMF country statistics, BMKG earthquakes, Open-Meteo weather,
+Google Maps reviews and place search, Instagram, Play Store and App Store reviews, SINTA
+(Indonesian academic index), World Bank and IMF country statistics, USGS earthquakes, NASA FIRMS fire hotspots, Open-Meteo weather, PIHPS Bank Indonesia food prices,
 Saham (OHLCV, dividends,
 splits), Threads, X/Twitter, and YouTube comments. Every job is stored with its
 parameters, log, and rows, grouped under a project name, and exported as Excel,

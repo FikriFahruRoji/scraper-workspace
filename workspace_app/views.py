@@ -24,6 +24,8 @@ SORTS = {
     "playstore": {"terbaru": ("Terbaru", "Ulasan paling baru lebih dulu"),
                   "relevan": ("Paling relevan", "Urutan bawaan Play Store"),
                   "rating": ("Rating", "Dikelompokkan menurut bintang")},
+    "appstore": {"terbaru": ("Terbaru", "Ulasan paling baru lebih dulu"),
+                 "membantu": ("Paling membantu", "Ulasan dengan suara terbanyak lebih dulu")},
     "threads": {"recent": ("Terbaru", "Post paling baru lebih dulu"),
                 "top": ("Teratas", "Post paling populer lebih dulu")},
     "x": {"latest": ("Terbaru dulu", "Mulai dari tanggal selesai, mundur ke tanggal mulai"),
@@ -106,7 +108,7 @@ def time_limit(source):
                            "sudah terkumpul tetap disimpan.")
 
 
-OPEN_DATA = ("worldbank", "imf", "bmkg", "openmeteo", "sinta")
+OPEN_DATA = ("worldbank", "imf", "usgs", "firms", "openmeteo", "sinta", "pangan")
 
 
 def params_for(source, mode):
@@ -189,6 +191,19 @@ def params_for(source, mode):
         only_text = check(source, "only_text", "Hanya ulasan dengan teks", True)
         return dict(app_id=package, count=count, lang=lang.strip().lower(),
                     country=country.strip().lower(), sort=sort, score=score,
+                    max_minutes=time_limit(source), only_with_text=only_text)
+    if source == "appstore":
+        app = text(source, "package", "ID aplikasi atau URL App Store",
+                   placeholder="389801252 atau https://apps.apple.com/id/app/…/id389801252")
+        country = text(source, "country", "Kode negara toko", "id",
+                       help="Dua huruf, misalnya id atau us. Ulasan dipisah per toko negara.")
+        sort = choice("Urutan ulasan", SORTS["appstore"], key=k("sort"))
+        score = st.pills("Rating", [0, 1, 2, 3, 4, 5], key=k("score"), **_initial(k("score"), 0, "default"),
+                         format_func=lambda value: "Semua" if not value else f"{value} ★") or None
+        st.caption("Apple hanya membuka 500 ulasan terakhir per aplikasi dan negara, tanpa balasan pengembang.")
+        count = maximum(source)
+        only_text = check(source, "only_text", "Hanya ulasan dengan teks", True)
+        return dict(app_id=app, count=count, country=country.strip().lower(), sort=sort, score=score,
                     max_minutes=time_limit(source), only_with_text=only_text)
     if source == "threads":
         keyword = text(source, "keyword", "Kata kunci pencarian", placeholder="Contoh: timnas")
@@ -294,6 +309,9 @@ def method_rows(job):
         rows.append(("Urutan", SORTS[source][params["sort"]][0]))
     if params.get("method") in METHODS.get(source, {}):
         rows.append(("Cara pengambilan", METHODS[source][params["method"]][0]))
+    if source == "appstore":
+        rows.append(("Negara toko", params.get("country", "-")))
+        rows.append(("Rating", f"{params['score']} ★" if params.get("score") else "Semua"))
     if source == "playstore":
         rows.append(("Bahasa / negara", f"{params.get('lang', '-')} / {params.get('country', '-')}"))
         rows.append(("Rating", f"{params['score']} ★" if params.get("score") else "Semua"))
@@ -395,7 +413,7 @@ def seed_form(source, params, project):
             state[_key(source, FIELDS[name])] = value
         elif name in LIMITS:
             state[_key(source, "count")] = value
-    if source == "playstore":
+    if source in {"playstore", "appstore"}:
         state[_key(source, "score")] = params.get("score") or 0
     if source == "gmaps_places":
         state[_key(source, "detail")] = bool(params.get("detail_limit"))
@@ -482,7 +500,7 @@ def validate(source, params):
         "google_scholar": ["query"],
         "news": ["keyword"], "saham": ["symbol"], "gmaps": ["url_input"],
         "gmaps_places": ["keyword"],
-        "instagram": ["post_input", "query"], "playstore": ["app_id"],
+        "instagram": ["post_input", "query"], "playstore": ["app_id"], "appstore": ["app_id"],
         "threads": ["keyword"], "x": ["keyword", "username", "tweet_url"],
         "youtube": ["url_input"],
     }
@@ -500,6 +518,11 @@ def validate(source, params):
             value = params[key]
             if len(value) != 2 or not value.isascii() or not value.isalpha():
                 raise ValueError("Kode bahasa dan negara harus terdiri dari dua huruf.")
+    if source == "appstore":
+        params["app_id"] = load(source).normalize_app_input(params["app_id"])
+        country = params["country"]
+        if len(country) != 2 or not country.isascii() or not country.isalpha():
+            raise ValueError("Kode negara harus terdiri dari dua huruf.")
 
 
 def source_page(manager, source):

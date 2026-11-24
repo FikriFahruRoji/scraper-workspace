@@ -40,7 +40,7 @@ DEFAULT_LISTS = {"stopword_sources": ["project"], "keep_negation": True}
 TEXT_COLUMNS = {
     "google_scholar": ["Judul", "Ringkasan"],
     "news": ["title", "content"], "gmaps": ["ulasan"], "instagram": ["caption", "komentar"],
-    "playstore": ["ulasan"], "threads": ["text"], "x": ["text"], "youtube": ["komentar"],
+    "playstore": ["ulasan"], "appstore": ["judul", "ulasan"], "threads": ["text"], "x": ["text"], "youtube": ["komentar"],
 }
 
 URL_RE = re.compile(r"https?://\S+|www\.\S+", re.IGNORECASE)

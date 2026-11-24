@@ -287,7 +287,7 @@ ICONS = Path(__file__).resolve().parent / "resources" / "icons"
 # Logos of the services a source reads from, in each brand's own color. Black logos use the page ink so they
 # stay readable. Sources without a logo of their own get a themed symbol instead.
 BRAND_COLORS = {"instagram": "#E4405F", "youtube": "#FF0000", "x": "#101820", "threads": "#101820",
-                "gmaps": "#4285F4", "gmaps_places": "#4285F4", "playstore": "#01875F",
+                "gmaps": "#4285F4", "gmaps_places": "#4285F4", "playstore": "#01875F", "appstore": "#0D96F6",
                 "google_scholar": "#4285F4"}
 SVG_RE = re.compile(r'<svg[^>]*viewBox="([^"]+)"[^>]*>(.*)</svg>', re.S)
 
