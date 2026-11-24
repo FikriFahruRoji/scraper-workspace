@@ -12,7 +12,7 @@ from workspace_app import setup_runtime
 
 def main():
     if sys.version_info[:2] != (3, 11) or sys.prefix == sys.base_prefix:
-        raise SystemExit("Gunakan Python 3.11 di .venv. Lihat bagian Pemecahan masalah di README.")
+        raise SystemExit("Use Python 3.11 in .venv. See Troubleshooting in the README.")
 
     root = Path(__file__).resolve().parents[1]
     requirements = root / "requirements.txt"
@@ -20,7 +20,7 @@ def main():
     stamp = Path(sys.prefix) / ".workspace-requirements"
     installed = stamp.read_text(encoding="ascii") if stamp.is_file() else ""
     if installed != digest or find_spec("streamlit") is None:
-        print("Memasang atau memperbarui dependensi Python...", flush=True)
+        print("Installing or updating Python dependencies...", flush=True)
         if find_spec("pip") is None:
             subprocess.run([sys.executable, "-m", "ensurepip", "--upgrade"], check=True)
         subprocess.run([sys.executable, "-m", "pip", "install", "-r", str(requirements)], check=True)
@@ -28,7 +28,7 @@ def main():
 
     setup_runtime.main()
     port = environ.get("STREAMLIT_SERVER_PORT", "8510")
-    print(f"Buka http://127.0.0.1:{port} setelah Streamlit siap. Tekan Ctrl+C untuk berhenti.", flush=True)
+    print(f"Open http://127.0.0.1:{port} when Streamlit is ready. Press Ctrl+C to stop.", flush=True)
     return subprocess.call(
         [sys.executable, "-m", "streamlit", "run", "workspace_app.py",
          "--server.address", "127.0.0.1", "--server.port", port],
@@ -42,4 +42,4 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         raise SystemExit(0)
     except subprocess.CalledProcessError:
-        raise SystemExit("Pemasangan gagal. Periksa pesan di atas dan coba buka launcher lagi.")
+        raise SystemExit("Setup failed. Check the message above and run the launcher again.")

@@ -6,10 +6,10 @@ if exist "%WORKSPACE_PY%" goto run
 
 py -3.11 -c "import sys; raise SystemExit(sys.version_info[:2] != (3, 11))" >nul 2>&1
 if errorlevel 1 (
-    echo Python 3.11 belum ditemukan. Buka README dan ikuti petunjuk Windows.
+    echo Python 3.11 was not found. Follow the Windows setup steps in the README.
     goto failed
 )
-echo Menyiapkan lingkungan Python...
+echo Creating the Python environment...
 py -3.11 -m venv .venv
 if errorlevel 1 goto failed
 
@@ -20,6 +20,6 @@ exit /b 0
 
 :failed
 echo.
-echo Aplikasi gagal dibuka. Baca pesan di atas dan bagian Pemecahan masalah di README.
+echo Scraper Workspace failed to start. See the message above and Troubleshooting in the README.
 pause
 exit /b 1

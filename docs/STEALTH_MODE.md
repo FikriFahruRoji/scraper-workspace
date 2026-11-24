@@ -2,7 +2,7 @@
 
 Aplikasi memakai Scrapling 0.5.1 dan Streamlit 1.67.0. Gunakan launcher
 `.command` di macOS atau `.bat` di Windows untuk menyiapkan dan membuka
-aplikasi. [Panduan instalasi](../README.md#instalasi-di-macos-atau-windows)
+aplikasi. [Panduan instalasi](../README.md#install-on-macos-or-windows)
 
 Pada macOS, kamu juga bisa menjalankan Streamlit langsung setelah instalasi:
 

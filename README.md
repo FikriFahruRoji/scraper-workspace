@@ -1,348 +1,335 @@
 # <img src="workspace_app/resources/icon.svg" width="40" height="40" alt=""> Scraper Workspace
 
-Kumpulkan, bersihkan, dan analisis data riset dalam satu aplikasi lokal.
-Pilih dari **20 sumber**, simpan riwayat di komputer, dan ekspor hasil ke **Excel, CSV, atau JSON**.
+Collect data from 20 sources, clean the text, and explore it with charts and tables.
+The app stores job history in a local SQLite database. Export results as Excel, CSV, or JSON.
 
-**[Unduh ZIP](https://github.com/FikriFahruRoji/scraper-workspace/archive/refs/heads/main.zip)** ·
-**[Instalasi macOS / Windows](#instalasi-di-macos-atau-windows)** ·
-[Contoh penggunaan](#contoh-penggunaan) ·
-[Katalog sumber](#katalog-sumber-data)
+**[Download ZIP](https://github.com/FikriFahruRoji/scraper-workspace/archive/refs/heads/main.zip)** ·
+**[Install on macOS or Windows](#install-on-macos-or-windows)** ·
+[Example](#example) · [Data sources](#data-sources)
 
-![Halaman Lakukan Scraping di Scraper Workspace dengan katalog sumber, pencarian, dan filter kategori](docs/images/scraper-workspace.png)
+![macOS Terminal demo. The launcher starts Streamlit at http://127.0.0.1:8510.](docs/images/terminal-startup.gif)
 
-## Instalasi di macOS atau Windows
+## Install on macOS or Windows
 
-Siapkan koneksi internet untuk pemasangan pertama. Kedua launcher menyiapkan
-lingkungan Python di folder `.venv`, memasang dependensi, dan menyiapkan Chromium.
+The first run needs an internet connection. The launcher creates a Python
+environment in `.venv` and installs the Python packages and Chromium.
 
-### 1. Unduh dan ekstrak proyek
+### 1. Download and extract the project
 
-1. Buka repositori di GitHub, lalu pilih **Code → Download ZIP** di branch
-   `main`. [Repositori Scraper Workspace](https://github.com/FikriFahruRoji/scraper-workspace)
-2. Ekstrak ZIP ke folder yang bisa kamu akses, misalnya **Documents**. Di Windows,
-   klik kanan ZIP lalu pilih **Extract All**.
-3. Buka folder hasil ekstraksi. Kamu berada di folder yang tepat jika
-   `README.md` dan `workspace_app.py` terlihat bersama file launcher.
+1. Open the repository on GitHub and select **Code → Download ZIP** on the
+   main branch. [Scraper Workspace repository](https://github.com/FikriFahruRoji/scraper-workspace)
+2. Extract the ZIP into a folder you can access, such as **Documents**. On
+   Windows, right-click the ZIP and select **Extract All**.
+3. Open the extracted folder. The launchers are next to `workspace_app.py`.
 
-### 2. Pasang Python 3.11
+### 2. Install Python 3.11
 
-- **macOS.** Unduh **macOS 64-bit universal2 installer** dari halaman resmi
-  Python 3.11.9, buka file `.pkg`, lalu ikuti langkah instalasinya. Setelah
-  selesai, buka **Applications → Python 3.11** dan klik dua kali
-  **Install Certificates.command**. Jika memakai
-  Homebrew, kamu juga dapat memasang Python dengan `brew install python@3.11`.
-  [Unduhan resmi Python 3.11.9](https://www.python.org/downloads/release/python-3119/)
-- **Windows.** Pasang **Python Install Manager** dari python.org. Buka PowerShell
-  dari menu Start, jalankan perintah di bawah, lalu tunggu selesai. Jika perintah
-  `py -3.11 --version` sudah menampilkan `Python 3.11.x`, Python sudah siap.
-  [Panduan resmi Python untuk Windows](https://docs.python.org/3.14/using/windows.html)
+- **macOS.** Download the **macOS 64-bit universal2 installer** from the Python
+  3.11.9 release page. Open the `.pkg` and follow the installer. Then open
+  **Applications → Python 3.11** and double-click **Install Certificates.command**.
+  If you use Homebrew, run `brew install python@3.11` instead.
+  [Python 3.11.9 downloads](https://www.python.org/downloads/release/python-3119/)
+- **Windows.** Install **Python Install Manager** from python.org. Open
+  PowerShell from the Start menu. Skip the install command if the version
+  check already reports `Python 3.11.x`.
+  [Python on Windows](https://docs.python.org/3.14/using/windows.html)
 
   ```powershell
   py install 3.11
   py -3.11 --version
   ```
 
-### 3. Buka aplikasi
+### 3. Open the app
 
-1. Kembali ke folder proyek. Klik dua kali **`Jalankan Scraper Workspace.command`**
-   di macOS atau **`Jalankan Scraper Workspace.bat`** di Windows.
-2. Biarkan jendela Terminal atau Command Prompt terbuka sambil menunggu
-   pemasangan selesai. Jika browser belum terbuka, buka
-   [Scraper Workspace di localhost](http://127.0.0.1:8510) setelah alamatnya
-   tampil di jendela launcher.
-3. Untuk menutup aplikasi, klik jendela launcher lalu tekan **Ctrl+C**. Untuk
-   membukanya kembali, klik dua kali launcher yang sama. Launcher memeriksa
-   perubahan `requirements.txt` dan memasang dependensi bila diperlukan.
-
-### Pemecahan masalah
-
-| Pesan atau gejala | Yang perlu dilakukan |
+| System | Double-click |
 | --- | --- |
-| Python 3.11 belum ditemukan | Selesaikan langkah 2, tutup jendela Terminal atau PowerShell lama, lalu buka lagi. Periksa dengan `python3.11 --version` di macOS atau `py -3.11 --version` di Windows. |
-| macOS menyatakan file `.command` tidak dapat dijalankan karena izin | Buka Terminal, ketik `bash ` (sertakan spasi), seret file launcher dari Finder ke jendela Terminal, lalu tekan Enter. Jalankan hanya file dari salinan repo yang kamu percayai. |
-| Pemasangan berhenti saat mengunduh paket atau Chromium | Periksa koneksi, tutup jendela launcher, lalu jalankan lagi. Pesan kesalahan tampil di jendela launcher. |
-| Port 8510 sedang digunakan | Jika Scraper Workspace sudah berjalan, buka tab yang ada. Jika port dipakai aplikasi lain, gunakan perintah port alternatif di bawah dari folder proyek. |
-| Lingkungan Python rusak setelah folder proyek dipindah | Tutup aplikasi, ubah nama folder `.venv` menjadi `.venv-lama`, lalu buka launcher lagi. Riwayat dan profil login tersimpan terpisah dari `.venv`. |
+| macOS | `Launch Scraper Workspace.command` |
+| Windows | `Launch Scraper Workspace.bat` |
 
-**Port alternatif di macOS**
+Keep Terminal or Command Prompt open while the app runs. Press
+<kbd>Ctrl</kbd>+<kbd>C</kbd> there to stop it. Use the same launcher next time.
+It runs `pip install` if `requirements.txt` changes or Streamlit is missing.
+[Open Scraper Workspace on localhost](http://127.0.0.1:8510)
+
+<details>
+<summary>Run from a terminal</summary>
+
+On macOS, open Terminal in the project folder.
 
 ```bash
-STREAMLIT_SERVER_PORT=8511 bash "Jalankan Scraper Workspace.command"
+bash "Launch Scraper Workspace.command"
 ```
 
-**Port alternatif di Windows (PowerShell)**
+On Windows, open PowerShell in the project folder.
+
+```powershell
+& ".\Launch Scraper Workspace.bat"
+```
+
+</details>
+
+### Troubleshooting
+
+| Symptom | Try this |
+| --- | --- |
+| Python 3.11 was not found | Finish step 2 and reopen Terminal or PowerShell. Run `python3.11 --version` on macOS or `py -3.11 --version` on Windows. |
+| macOS says the `.command` file cannot run because of permissions | Open Terminal, type `bash` with a trailing space, drag the launcher from Finder into Terminal, and press Enter. Run launchers from a copy of the repo you trust. |
+| Package or Chromium download failed | Check your connection. Close the launcher and run it again. The error appears in the launcher window. |
+| Port 8510 is in use | If Scraper Workspace is already running, open its browser tab. Otherwise use port 8511 with the command below. |
+| Python stopped working after you moved the project folder | Close the app, rename `.venv` to `.venv-old`, then run the launcher again. The app stores history and login profiles outside `.venv`. |
+
+**macOS**
+
+```bash
+STREAMLIT_SERVER_PORT=8511 bash "Launch Scraper Workspace.command"
+```
+
+**Windows (PowerShell)**
 
 ```powershell
 $env:STREAMLIT_SERVER_PORT = "8511"
-& ".\Jalankan Scraper Workspace.bat"
+& ".\Launch Scraper Workspace.bat"
 ```
 
-Untuk kedua perintah tersebut, buka [Scraper Workspace di port 8511](http://127.0.0.1:8511).
+[Open Scraper Workspace on port 8511](http://127.0.0.1:8511)
 
-## Contoh penggunaan
+## Example
 
-**Mengumpulkan publikasi untuk tinjauan pustaka**
+**Build a list of papers from Google Scholar**
 
-1. Di **Lakukan Scraping**, pilih **Google Scholar** dan buka mode **Cari Kata Kunci**.
-2. Masukkan topik riset, misalnya `digital literacy higher education`, lalu isi **Nama proyek**.
-3. Klik **Mulai Ambil Data**. Setelah proses selesai, buka **Dataset** dan pilih pekerjaan tadi.
-4. Tinjau judul dan metadata publikasi, lalu unduh **Excel** atau **CSV** untuk menyaring hasil.
-
-## Cara pakai
-
-- Menu sidebar dibagi empat: **Data** (Dataset, Lakukan Scraping), **Preprocessing**
-  (Gabungkan Data, Preprocessing Data, Proses Berjalan, Dataset Preprocessing), **Analisis** (Rekomendasi Analisis,
-  Sentimen, Statistik Data, Frekuensi Kata, Tren Waktu, Topik Teks, Jaringan Kata), dan **Info** (peta analisis per
-  jenis data). Tampilan aplikasi selalu mode terang. [Panduan analisis](docs/ANALISIS.md)
-- **Lakukan Scraping**: pilih sumber dari katalog (bisa dicari dan difilter
-  per kategori), klik **Kumpulkan Data**, isi parameter, periksa panel ringkasan, lalu klik
-  **Mulai Ambil Data**. Satu pekerjaan atau login platform bisa aktif pada satu waktu dan
-  tetap berjalan ketika berpindah halaman.
-- Status dan tombol **Hentikan** tampil di atas halaman. Untuk scraping, proses berhenti
-  setelah permintaan yang sedang berjalan selesai.
-- **Dataset** mencantumkan semua pekerjaan (scraping, gabungan, dan preprocessing) dengan
-  pencarian, filter sumber dan status, serta chip proyek. **Buka** menampilkan cara data
-  diambil, tombol **Jalankan ulang dengan parameter ini**, tabel hasil, unduhan **Excel
-  (.xlsx)**, **CSV**, atau **JSON**, dan teks metode siap salin untuk laporan. Untuk teks di
-  atas batas Excel 32.767 karakter per sel, gunakan CSV atau JSON. Setelah penutupan
-  tiba-tiba, pekerjaan menjadi **Terputus** saat aplikasi dibuka kembali; data sampai
-  penyimpanan terakhir tetap tersedia.
-- **Gabungkan Data** menyatukan dua dataset atau lebih (boleh dari sumber berbeda) menjadi satu
-  dataset baru. Kolom `sumber_data` dan `pekerjaan_asal` bisa ditambahkan agar setiap baris
-  tetap bisa ditelusuri, dan baris yang persis sama bisa dibuang. Hasilnya muncul di
-  **Dataset** dan bisa langsung dibersihkan di Preprocessing atau dianalisis.
-- **Proses Berjalan** menampilkan pekerjaan yang sedang jalan: status, jumlah baris tersimpan,
-  lama berjalan, progres, log langsung (diperbarui tiap detik), dan tombol **Hentikan**. Setelah
-  **Jalankan preprocessing** diklik, kamu otomatis dibawa ke halaman ini. Bila proses sudah
-  selesai, halaman ini menampilkan ringkasan dan log terakhir. Tanda ● di menu muncul saat ada
-  proses berjalan. **Dataset Preprocessing** mencantumkan semua hasil preprocessing; **Buka**
-  menampilkan laporan langkah, konfigurasi, tabel, dan unduhan.
-- Setiap scraping dan penggabungan wajib diberi **Nama proyek**. Ketik nama baru, atau pilih
-  proyek yang sudah ada. Nama berkas unduhan memakai nama proyek.
-- **Analisis** berjalan lokal pada dataset yang sudah selesai: **Statistik Data** (kelengkapan
-  kolom, ringkasan angka, sebaran nilai), **Frekuensi Kata** (kata dan pasangan kata teratas),
-  **Tren Waktu** (jumlah data per hari, minggu, atau bulan, dengan pembanding; zona waktu
-  dihitung dalam WIB), **Topik Teks** (TF-IDF dan NMF), dan **Jaringan Kata** (kata yang
-  sering muncul bersama). Halaman **Sentimen** mendukung analisis ulasan dengan
-  label bintang atau model RoBERTa Indonesia. Metode RoBERTa memerlukan dependensi
-  opsional di `requirements-analysis.txt` dan unduhan model. Analisis kata dan topik
-  memakai kolom `teks_bersih` bila dataset sudah
-  dipreprocessing, dan membersihkan teks sendiri bila belum (maksimal 20.000 teks pertama).
-  Setiap tabel hasil bisa diunduh sebagai CSV.
-- Klik **Login platform** jika dibutuhkan oleh sumber (tidak tersedia untuk Google Maps Review dan Google Maps Lokasi).
-  Masuk secara manual lewat browser. Workspace memakai profil browser terpisah dari scraper mandiri.
-
-Data Workspace disimpan di `~/Library/Application Support/ScraperWorkspace`
-pada macOS atau `%LOCALAPPDATA%\ScraperWorkspace` pada Windows. Penghapusan
-riwayat terpisah dari penyimpanan profil login. Berkas riwayat, cookie, profil
-browser, dan hasil ekspor tidak diperlukan untuk menjalankan kode dari GitHub.
-
-## Katalog sumber data
-
-| Sumber | Data yang tersedia |
-| --- | --- |
-| Google Scholar | Profil publik, metrik dan riwayat sitasi, atau publikasi berdasarkan kata kunci |
-| Berita | Artikel dari 10 portal Indonesia |
-| SINTA | Penulis per afiliasi, profil dan metrik penulis (skor SINTA, Scopus, Google Scholar, WoS), serta contoh dokumen |
-| Google Maps Review | Ulasan tempat berdasarkan URL atau nama lokasi |
-| Google Maps Lokasi | Daftar tempat relevan berdasarkan kata kunci: alamat, rating, koordinat, dan detail opsional |
-| Play Store | Ulasan aplikasi berdasarkan package ID |
-| App Store | Ulasan aplikasi iOS berdasarkan ID atau link App Store, per toko negara (hingga 500 ulasan terbaru atau paling membantu per aplikasi) |
-| Instagram, Threads, dan X | Post, profil, pencarian, atau balasan sesuai sumber |
-| YouTube | Komentar video dan balasan |
-| Saham | Harga historis OHLCV, dividen, dan split; juga kripto dan kurs mata uang (pasar **Kurs**, misalnya `USD/IDR`) |
-| World Bank | Indikator pembangunan (PDB, inflasi, penduduk, dan lainnya) per negara dan tahun |
-| IMF | Data ekonomi makro World Economic Outlook per negara dan tahun, aktual dan proyeksi |
-| Harga Pangan (BI) | Harga harian 21 komoditas pangan strategis (beras, cabai, bawang, daging, telur, minyak goreng, gula) per provinsi atau nasional dan jenis pasar, dari PIHPS Bank Indonesia |
-| OECD | Seluruh katalog dataset OECD (sekitar 1.500) lewat API SDMX, dengan pilihan wilayah dan rincian bernama: inflasi, PDB, pajak, kesehatan, dan lainnya |
-| Gempa (USGS) | Riwayat gempa Indonesia, seluruh dunia, atau kotak koordinat sendiri dari katalog USGS sejak 1900: waktu WIB dan UTC, magnitudo, kedalaman, koordinat, potensi tsunami, laporan dirasakan |
-| Titik Api (NASA FIRMS) | Titik api (hotspot) satelit VIIRS atau MODIS per negara dan tahun sejak 2000: lokasi, waktu WIB dan UTC, daya radiasi api (FRP), keyakinan, siang atau malam, dan jenis |
-| Bencana (GDACS & EONET) | Kejadian bencana selain gempa di Indonesia atau seluruh dunia sejak 2000, dengan provinsi dan kabupaten/kota: banjir, siklon tropis, gunung api, kekeringan, kebakaran hutan (GDACS, dengan level peringatan hijau/oranye/merah), serta tanah longsor, suhu ekstrem, dan kabut asap (NASA EONET): waktu WIB dan UTC, koordinat, keparahan, status |
-| Cuaca (Open-Meteo) | Cuaca harian atau per jam (suhu, hujan, angin, kelembapan, dan lainnya) untuk lokasi mana pun, riwayat sejak 1940 atau prakiraan 16 hari |
+1. Open **Lakukan Scraping** (Collect Data), choose **Google Scholar**, and select **Cari Kata Kunci** (Keyword Search).
+2. Search for `digital literacy higher education` and give the project a name, such as **Digital literacy**.
+3. Click **Mulai Ambil Data** (Start). When the job finishes, open **Dataset** and find your project.
+4. Check the titles and metadata. Export to Excel or CSV to screen the papers.
 
 <details>
-<summary>Cakupan, batas pengambilan, dan catatan per sumber</summary>
+<summary>View the source catalog in the app</summary>
 
-Katalog USGS memuat gempa seluruh dunia sejak 1900. Satu permintaan dibatasi 20.000 kejadian, jadi
-rentang tanggal dipecah otomatis. Untuk Indonesia, M 4,5+ berarti sekitar 1.000 gempa per tahun; turunkan
-magnitudo hanya untuk rentang pendek. Kotak Indonesia (11,5°LS–6,5°LU, 94°–142°BT) mencakup sedikit wilayah
-tetangga, jadi cek kolom `tempat`. Data USGS adalah domain publik.
+![The Lakukan Scraping screen with a search field, category filters, and source cards](docs/images/scraper-workspace.png)
 
-OECD memakai API SDMX publik (sdmx.oecd.org). Formulir menampilkan seluruh katalog OECD (sekitar 1.500 dataset,
-bisa dicari dengan mengetik; lima dataset yang terbukti memuat Indonesia diberi tanda bintang dan ada di atas). Setelah
-dataset dipilih, formulir memuat dimensinya (wilayah, ukuran, satuan, usia, dan lainnya) dan hanya menawarkan kode yang
-benar-benar punya data, lengkap dengan namanya. Dimensi yang cuma punya satu nilai ditampilkan sebagai keterangan tetap.
-Daftar dataset disimpan di komputer selama seminggu; pemuatan pertama bisa sampai satu menit. Di hasil, dimensi yang
-berubah menjadi kolom dan yang tetap dicatat sekali di metadata pekerjaan. OECD membatasi permintaan data per jam
-(sekitar 20), jadi satu pengambilan hanya memakai satu permintaan data. Tidak semua wilayah ada di semua dataset:
-Indonesia ada di CPI, neraca nasional, pajak Asia-Pasifik, belanja kesehatan, dan harapan hidup, tetapi tidak di
-sebagian dataset ketenagakerjaan dan kependudukan.
+</details>
 
-Titik api NASA FIRMS diambil dari arsip standar per negara dan tahun (tanpa kunci). Arsip baru lengkap
-setelah tahun kalender berakhir, jadi data terbaru adalah tahun lalu; data mendekati waktu nyata dan
-area bebas memerlukan MAP_KEY pribadi dan belum didukung. VIIRS (375 m) mulai 2012, MODIS (1 km) mulai 2000.
-Satu tahun VIIRS untuk Indonesia bisa ratusan ribu titik, jadi ada batas jumlah titik bawaan 200.000.
+## Usage
 
-Bencana diambil per bulan dari GDACS (gdacs.org) dan NASA EONET, keduanya tanpa kunci. Wilayah Indonesia di GDACS
-berarti kejadian yang mengenai Indonesia, jadi siklon yang tidak menyentuh daratan hanya muncul di Seluruh dunia; di EONET
-berarti kotak koordinat Indonesia. Banyak kejadian EONET disalin dari GDACS; bila keduanya dipilih, salinan itu dibuang.
-Setiap kejadian diberi kolom `provinsi` dan `kabupaten_kota` dari lintang dan bujurnya,
-dihitung di komputer sendiri dengan batas wilayah BPS 2020 yang disederhanakan (geoBoundaries/OCHA, CC BY 3.0 IGO;
-38 provinsi termasuk pemekaran Papua 2022; dibangun ulang dengan `tools/build_wilayah.py`). Titik di laut sampai 20 km
-dari pantai diberi kabupaten terdekat dan jaraknya di `jarak_wilayah_km`; titik lebih jauh atau di luar Indonesia dibiarkan
-kosong. Untuk kejadian berbentuk area, titiknya adalah titik tengah area itu.
-Gempa tidak termasuk (pakai sumber Gempa USGS). Untuk data korban dan kerusakan per kabupaten, sumber resminya DIBI
-BNPB, yang belum bisa diambil tanpa login.
+- In **Lakukan Scraping**, search for a source or filter by category. Click
+  **Kumpulkan Data**, set the options, and enter a **Nama proyek** (project name).
+  Check the summary, then click **Mulai Ambil Data**. You can switch pages while
+  a job runs. The app runs one job or platform login session at a time.
+- Click **Hentikan** (Stop) to stop a job. A scrape waits for its current
+  request to finish.
+- In **Dataset**, filter jobs by project, source, or status. Click **Buka** to
+  see the settings, results, and methods text. From there you can export the
+  results or rerun a scrape with the same settings. Use CSV or JSON for text
+  longer than Excel's 32,767-character cell limit. If the app closes mid-job,
+  it marks the job **Terputus** (Interrupted) at the next launch and keeps the
+  rows saved before it closed.
+- **Gabungkan Data** (Merge Data) combines two or more datasets, including
+  datasets from different sources. Add `sumber_data` and `pekerjaan_asal` to trace
+  each row, or remove duplicate rows. Give the merged dataset a project name.
+  Downloads use that name in the filename.
+- **Proses Berjalan** (Running Jobs) shows status, saved rows, elapsed time,
+  progress, a live log, and the stop button. Starting preprocessing takes you
+  there. When the job ends, the page shows its summary and final log.
+  **Dataset Preprocessing** keeps the settings, reports, and downloads for
+  each saved result.
+- Under **Analisis**, use **Statistik Data** for missing values and numeric
+  distributions, or **Tren Waktu** for daily, weekly, or monthly counts in
+  Western Indonesian Time (WIB). Text tools include word and pair counts,
+  TF-IDF + NMF topic modeling, and word co-occurrence networks. Word and topic
+  analysis use `teks_bersih` if present or clean the text on the fly, up to
+  20,000 texts.
+- **Sentimen** can use review stars or the Indonesian RoBERTa model. RoBERTa
+  needs the optional packages in `requirements-analysis.txt` and a model
+  download. Analysis runs locally, and you can export the result tables to CSV.
+  [Analysis guide in Indonesian](docs/ANALISIS.md)
+- If a source requires authentication, click **Login platform** and sign in
+  manually in the browser. Google Maps Review and Google Maps Lokasi have no
+  login button. The Workspace uses its own browser profiles.
 
-Open-Meteo mencocokkan nama lokasi ke hasil pertama pencarian
-lokasinya, jadi periksa kolom `lokasi` (atau tulis koordinat `lintang,bujur`). Data cuaca berlisensi
-CC BY 4.0 untuk penggunaan non-komersial.
+The app stores its data in `~/Library/Application Support/ScraperWorkspace` on macOS or `%LOCALAPPDATA%\ScraperWorkspace` on Windows.
+Job history and browser profiles are stored separately.
 
-World Bank, IMF, OECD, USGS, NASA FIRMS, GDACS, NASA EONET, Open-Meteo, dan Harga Pangan (PIHPS BI) memakai API publik tanpa kunci, login, atau browser. Nilai IMF dalam satuan
-penuh (jiwa, dolar AS), bukan juta atau miliar, dan setiap baris diberi tanda **aktual** atau
-**proyeksi**. Hasilnya berupa tabel panjang (satu baris per negara, indikator, dan tahun) dengan
-grafik per indikator di tab **Ringkasan**.
+## Data sources
 
-SINTA memakai situs publik sinta.kemdiktisaintek.go.id tanpa login, lewat sesi Scrapling yang meniru Chrome
-(SINTA menolak klien non-browser dengan 403). Paket `sinta-scraper` 1.2.0 tidak dipakai karena masih menunjuk
-ke domain lama dan markup yang sudah berubah. Daftar penulis per afiliasi dan profil penulis stabil dan lengkap.
-**Daftar dokumen per penulis tidak lengkap**: SINTA hanya menampilkan 10 dokumen acak per daftar, tanpa halaman
-berikutnya, dan isinya berganti tiap diminta. Karena itu mode **Contoh dokumen** menandai setiap baris sebagai
-contoh. Untuk jumlah dokumen dan sitasi yang utuh, pakai mode **Profil penulis**.
+| Source | What you can collect |
+| --- | --- |
+| Google Scholar | Public researcher profiles, citation history, or publications by keyword |
+| Berita (News) | Articles from 10 Indonesian news sites |
+| SINTA | Authors by affiliation, profiles and metrics (SINTA, Scopus, Google Scholar, WoS), and sample documents |
+| Google Maps Review | Place reviews by URL or name |
+| Google Maps Lokasi | Places by keyword, with addresses, ratings, coordinates, and optional details |
+| Play Store | App reviews by package ID |
+| App Store | iOS app reviews by ID or URL and storefront, up to 500 recent or helpful reviews per app |
+| Instagram, Threads, and X | Posts, profiles, search results, or replies, depending on the source |
+| YouTube | Video comments and replies |
+| Saham (Markets) | Historical OHLCV, dividends, and splits. Also supports crypto and currency pairs such as `USD/IDR` under **Kurs** |
+| World Bank | Development indicators such as GDP, inflation, and population, by country and year |
+| IMF | World Economic Outlook indicators by country and year, including actual values and projections |
+| Harga Pangan (BI) | Daily prices for 21 food staples from PIHPS Bank Indonesia, by province or nationwide and by market type |
+| OECD | Roughly 1,500 SDMX datasets, with filters for geography and other dimensions |
+| Gempa (USGS) | Earthquakes since 1900 for Indonesia, the world, or a custom bounding box. Includes time in WIB and UTC, magnitude, depth, coordinates, tsunami flag, and felt reports |
+| Titik Api (NASA FIRMS) | VIIRS or MODIS hotspots by country and year, with coordinates, time in WIB and UTC, fire radiative power, confidence, day/night, and type |
+| Bencana (GDACS & EONET) | Disasters since 2000, excluding earthquakes. Includes floods, cyclones, volcanic eruptions, droughts, and wildfires from GDACS, plus landslides, extreme temperatures, and haze from NASA EONET. Rows include time in WIB and UTC, coordinates, severity, and status |
+| Cuaca (Open-Meteo) | Hourly or daily weather for a location, with historical data from 1940 and forecasts up to 16 days |
+
+<details>
+<summary>Coverage, limits, and notes by source</summary>
+
+**USGS.** Each request can return at most 20,000 events. The app splits long
+date ranges. Indonesia's preset box (11.5°S–6.5°N, 94°–142°E) includes parts of
+neighboring countries. Check `tempat` when you need events within Indonesia.
+At magnitude 4.5 and above, a year can yield around 1,000 events. Use shorter
+ranges at lower magnitudes. USGS data is public domain.
+
+**OECD.** Search the public SDMX catalog for a dataset. The form shows available
+dimension codes with labels and displays single-value dimensions as fixed
+settings. It stars five datasets with Indonesian coverage. The catalog is
+cached locally for seven days. The first load can take up to a minute.
+Variable dimensions become table columns and fixed ones go in the job metadata.
+Each run makes one data request against the OECD rate limit of around 20 per
+hour. Indonesian coverage includes CPI, national accounts, Asia-Pacific taxes,
+health expenditure, and life expectancy. Coverage varies for labor and
+population datasets.
+
+**NASA FIRMS.** The app uses annual country archives, which are complete after
+the calendar year ends. VIIRS (375 m) starts in 2012 and MODIS (1 km) in 2000.
+The default cap is 200,000 hotspots. Near-real-time and custom-area endpoints
+require a `MAP_KEY` and are outside the archive workflow.
+
+**GDACS and NASA EONET.** The app fetches events by month and removes EONET
+copies of GDACS events when you select both sources. GDACS filters for events
+that affect Indonesia. Use the worldwide filter for cyclones that stay offshore. EONET filters against an Indonesian bounding box.
+The app looks up `provinsi` and `kabupaten_kota` using simplified BPS boundaries
+from geoBoundaries/OCHA (CC BY 3.0 IGO), including the 38 provinces after the
+2022 Papua changes. Rebuild the boundaries with `tools/build_wilayah.py`. For offshore
+points within 20 km, the app records the nearest district and `jarak_wilayah_km`.
+More distant points and points outside Indonesia leave those fields blank.
+For an area event, the app uses its center. Use USGS for earthquakes. BNPB's
+DIBI is the official source for local casualties and damage and requires login.
+
+**Open-Meteo.** The app takes the first geocoding match. Check `lokasi` or
+enter `latitude,longitude`. Check Open-Meteo's usage terms before commercial use.
+
+**Public APIs.** World Bank, IMF, OECD, USGS, FIRMS archives, GDACS, NASA EONET,
+Open-Meteo, and PIHPS BI use public endpoints without keys or login. IMF
+returns full units, such as people or US dollars, and labels values **aktual**
+or **proyeksi**. Each row covers one country, indicator, and year. Open
+**Ringkasan** to plot an indicator.
+
+**SINTA.** The app uses Scrapling with Chrome impersonation to read author
+lists and profiles from the public SINTA site. SINTA shows 10
+rotating document samples per list and offers no next page. Use **Contoh
+dokumen** for samples or **Profil penulis** for document and citation totals.
 
 </details>
 
 ## Google Scholar
 
-Di **Lakukan Scraping → Akademik → Google Scholar**, pilih **Profil Scholar**
-untuk memasukkan URL atau ID peneliti, atau **Cari Kata Kunci** untuk mencari
-publikasi berdasarkan topik. Isi nama proyek, lalu klik **Mulai Ambil Data**.
-Profil memakai HTTP secara bawaan dan pencarian memakai browser. Metode,
-bahasa halaman, dan batas waktu bisa diubah di pengaturan pengambilan.
+Open **Lakukan Scraping → Akademik → Google Scholar**. Use **Profil Scholar**
+for a public profile URL or researcher ID. Use **Cari Kata Kunci** for a
+topic. Profile collection defaults to HTTP and keyword search defaults to a browser.
+You can change the method, page language, or timeout in the form.
 
-Buka hasil dari **Dataset** untuk memfilter artikel dan melihat grafik.
-Angka pada grafik sitasi tahunan berasal dari profil peneliti. Peringkat
-artikel pada pencarian dihitung dari hasil yang lolos filter tampilan.
-Unduhan mencakup seluruh dataset. Excel profil memiliki sheet **Artikel**,
-**Profil**, dan **Sitasi per Tahun**. Excel pencarian memiliki sheet **Hasil**
-dan **Pencarian**. CSV memuat tabel artikel dan JSON menyertakan metadata.
+Open the job in **Dataset** to filter articles and view charts. Annual citation
+counts come from the profile. The search chart ranks the articles that match
+your active filters. Downloads contain all rows. Profile Excel exports include
+**Artikel**, **Profil**, and **Sitasi per Tahun**. Search exports include
+**Hasil** and **Pencarian**. CSV holds the article table. JSON includes metadata.
 
 ## Google Maps Lokasi
 
-Di **Lakukan Scraping → Maps & Review → Google Maps Lokasi**, masukkan kata kunci
-tempat, misalnya `kopi bandung`, lalu atur jumlah hasil maksimum (10–120).
-Area opsional bisa ditambahkan untuk mempersempit pencarian. Hasil daftar memuat
-nama, kategori, alamat, rating, jumlah ulasan, status buka, koordinat, dan link
-tempat.
+Open **Lakukan Scraping → Maps & Review → Google Maps Lokasi**. Enter a keyword
+such as `kopi bandung` and set a limit of 10–120 results. Add an area to narrow the
+search. Results include name, category, address, rating, review count, open status,
+coordinates, and place link.
 
-Centang **Ambil detail tiap tempat** untuk membuka halaman masing-masing tempat
-dan melengkapi telepon, website, plus code, serta jam lengkap. Opsi ini jauh
-lebih lambat karena setiap tempat dibuka satu per satu.
+Select **Ambil detail tiap tempat** to fetch phone numbers, websites, plus codes,
+and full opening hours. This takes longer because it opens each place page.
+Open **Dataset** for the table, map, and category chart, then export to Excel,
+CSV, or JSON. Maps usually stops at around 120 results per search. If you get
+an empty list, try a broader keyword or add an area.
 
-Hasil bisa dibuka dari **Dataset** dalam bentuk tabel, peta, dan grafik kategori,
-lalu diunduh sebagai Excel, CSV, atau JSON. Google Maps biasanya berhenti memuat
-sekitar 120 hasil per pencarian. Jika daftar kosong, coba kata kunci yang lebih
-umum atau tambahkan area.
+## NLP preprocessing
 
-## Preprocessing NLP
+Open **Preprocessing Data** with a saved scrape or a CSV/Excel file. Choose
+one or more text columns, pick a preset, then adjust the steps. The first 20
+rows show how your settings affect the text.
 
-Halaman **Preprocessing Data** membersihkan teks dari Riwayat scraping atau dari berkas
-CSV/Excel. Pilih kolom teks (beberapa kolom digabung), pilih preset, lalu atur
-langkahnya. Pratinjau 20 baris pertama berubah langsung saat konfigurasi diubah.
+| Step | Ringan (transformer) | Lengkap (word analysis) |
+| --- | --- | --- |
+| Clean HTML, entities, Unicode NFKC, and whitespace | Always | Always |
+| Lowercase | Yes | Yes |
+| URLs, emails, and mentions | Replace with tokens | Remove |
+| Hashtags | Strip the # | Strip the # |
+| Emoji | Convert to words | Remove |
+| Repeated letters, e.g. bagusss → bagus | Reduce | Reduce |
+| Slang | Normalize | Normalize |
+| Numbers | Keep | Remove |
+| Punctuation | Keep | Remove except hyphens inside words |
+| Stopwords | Keep | Remove while retaining negation |
+| Sastrawi stemming | Off | On |
+| Minimum token length | Off | 2 |
+| Empty or duplicate rows | Drop | Drop |
 
-| # | Langkah | Ringan (transformer) | Lengkap (analisis kata) |
-| --- | --- | --- | --- |
-| 1 | Rapikan tag HTML, entitas, Unicode NFKC, spasi | selalu | selalu |
-| 2 | Huruf kecil | ya | ya |
-| 3 | URL, email, @mention | ganti token | hapus |
-| 4 | Hashtag | buang tanda # | buang tanda # |
-| 5 | Emoji | ubah ke kata | hapus |
-| 6 | Huruf berulang (bagusss → bagus) | ya | ya |
-| 7 | Normalisasi kata gaul | ya | ya |
-| 8 | Angka | biarkan | hapus |
-| 9 | Tanda baca (tanda hubung dalam kata tetap) | biarkan | hapus |
-| 10 | Stopword, kata negasi dipertahankan | – | ya |
-| 11 | Stemming Sastrawi | – | ya |
-| 12 | Panjang token minimum | – | 2 |
-| 13 | Buang baris kosong dan duplikat | ya | ya |
+The pipeline applies slang rules in one pass before removing numbers and
+punctuation, so tokens like `b4`, `7an`, `w/` still match.
+The default files in `workspace_app/resources/` are `slang.txt` (a JSON object) and
+`stopwords.txt` (one word per line). The app flags duplicate keys, self-maps,
+and pairs that map back to each other. Uploaded dictionaries override the
+defaults for that job. Manual `slang=formal` entries take precedence. Stopwords
+can come from the project, Sastrawi, scikit-learn's English list, or an upload.
+The Sastrawi root-word dictionary uses CC BY-NC-SA 3.0.
 
-Kata gaul dijalankan sebelum angka dan tanda baca dihapus agar kunci seperti
-`b4`, `7an`, dan `w/` tetap cocok. Penggantian hanya satu lapis.
+To save the output, select **Simpan ke Riwayat Preprocessing**. The job runs
+in the background and stores its settings and step counts. With saving off,
+you can download results until the page reloads. Output keeps the input columns
+and adds `teks_bersih` and `jumlah_token`. Saved scrape inputs include `pekerjaan_asal`.
+If the input already has `teks_bersih` or `jumlah_token`, the app copies the original
+values to columns with a unique `_asli` suffix.
 
-Kamus bawaan ada di `workspace_app/resources/`: `slang.txt` (objek JSON
-`{"slang": "formal"}`) dan `stopwords.txt` (satu kata per baris). Halaman
-menampilkan pemeriksaan kamus (kunci ganda, kata yang dipetakan ke dirinya
-sendiri, pasangan yang saling bertukar) tanpa memperbaikinya otomatis. Kamus
-unggahan per proses ditambahkan di atas kamus bawaan dan tidak disimpan. Isian
-manual `slang=formal` punya prioritas tertinggi.
+## Deployment
 
-Stopword bisa diambil dari kamus bawaan proyek, Sastrawi, daftar Inggris
-scikit-learn, dan berkas unggahan. Kamus kata dasar Sastrawi berlisensi
-CC-BY-NC-SA 3.0, jadi stemming hanya untuk penggunaan non-komersial.
+Use `workspace_app.py` as Streamlit's entry point and `requirements.txt` for
+dependencies. Each installation has one shared job queue, history database,
+and set of browser profiles. On a server, restrict access to its operator.
+[Linux and Streamlit Community Cloud deployment](docs/DEPLOYMENT.md)
 
-Dengan **Simpan ke Riwayat Preprocessing**, proses berjalan di latar belakang
-(satu antrean dengan scraping) dan hasilnya tersimpan dengan nama proyek di
-**Dataset** (sumber **Preprocessing**). Tanpa menyimpan, proses berjalan di halaman dan hasil
-bisa diunduh sampai halaman dimuat ulang. Keluaran berisi semua kolom asli,
-`pekerjaan_asal` (untuk data dari Riwayat), `teks_bersih`, dan `jumlah_token`,
-bersama laporan jumlah per langkah.
-Jika masukan sudah berisi `teks_bersih` atau `jumlah_token`, kolom lama diberi
-akhiran `_asli` yang unik agar nilainya tetap tersedia.
-
-## Deploy ke Streamlit
-
-Entrypoint aplikasi adalah **`workspace_app.py`** dan dependensi Python ada di
-**`requirements.txt`** di root repositori. Lihat [Panduan deployment](docs/DEPLOYMENT.md)
-untuk pemasangan di server Linux dan persiapan Streamlit Community Cloud.
-
-Versi saat ini memiliki **satu antrean, satu riwayat, dan satu set profil browser
-per instalasi**. Di server, seluruh pengunjung aplikasi akan berbagi state
-tersebut. Gunakan akses khusus operator selama isolasi per pengguna belum ada.
-
-## Struktur proyek
+## Project layout
 
 ```text
-workspace_app.py        Titik masuk Streamlit (menu)
-workspace_app/          Aplikasi: halaman (studio, views, analysis_view, ...), pekerjaan dan
-                        riwayat (jobs), preprocessing, analisis, tema (ui), Google Scholar
-scrapers/               Satu folder per sumber (news, gmaps, gmaps_places, instagram, playstore, appstore,
-                        saham, threads, x, youtube, worldbank, imf, oecd, usgs, firms, bencana, openmeteo, sinta, pangan), masing-masing berisi scraper.py
-scrapers/_shared/       Modul yang dipakai beberapa scraper (stealth_transport.py)
-tests/                  Uji otomatis
-tools/                  Pemeriksaan manual: transport, sumber publik, kinerja berita
-docs/                   Panduan deployment, mode stealth, dan analisis
-.streamlit/             Konfigurasi Streamlit dan tema
+workspace_app.py      Streamlit entry point and navigation
+workspace_app/        Forms, jobs, preprocessing, analysis, and Google Scholar
+scrapers/             Other source adapters, grouped by source
+scrapers/_shared/     Shared browser transport
+tests/                Automated tests
+tools/                Manual checks and data build tools
+docs/                 Deployment, browser setup, and analysis guides
+.streamlit/           Streamlit settings and theme
 ```
 
-Sumber baru ditambahkan dengan membuat `scrapers/<kunci>/scraper.py`, lalu mendaftarkan
-kuncinya di `workspace_app/sources.py` (`LABELS`, `FUNCTIONS`) dan `workspace_app/studio.py`
-(katalog).
+To add a source, put its adapter in `scrapers/<key>/scraper.py` and register it in
+`workspace_app/sources.py` and `workspace_app/studio.py`.
 
-## Kredit ikon
+## Icon credits
 
-Logo sumber data (Instagram, YouTube, X, Threads, Google Maps, Google Play, Google Scholar) berasal dari
-[Simple Icons](https://simpleicons.org) (berkas SVG berlisensi CC0), dan ikon simbol lainnya dari
-[Material Symbols](https://fonts.google.com/icons) (Apache 2.0). Semuanya tersimpan lokal di
-`workspace_app/resources/icons/`. Merek dagang dan logo milik pemiliknya masing-masing; di sini dipakai
-hanya untuk menandai sumber data.
+Source logos come from [Simple Icons](https://simpleicons.org) (CC0).
+Other symbols come from [Material Symbols](https://fonts.google.com/icons)
+(Apache 2.0). The SVG files live in `workspace_app/resources/icons/`.
 
-## Uji pengembang
+## Developer checks
 
-Setelah memasang dependensi, jalankan perintah berikut menggunakan Python dari
-lingkungan virtual proyek.
+Run these commands with the project's virtual environment active.
 
 ```bash
 python -m pip install pytest
 python -m pytest -q tests
 ```
 
-Untuk pemeriksaan manual, jalankan:
+The tests cover source forms, job execution and cancellation, recovery of
+partial results, project names, preprocessing, and exports. The optional
+RoBERTa test needs the model and `RUN_SLOW=1`. For manual checks, run:
 
 ```bash
 python tools/check_news_performance.py
 python tools/check_transport.py
 ```
-
-Uji Workspace mencakup pipeline preprocessing, form seluruh sumber terdaftar, pekerjaan tunggal, penghentian, pemulihan
-hasil parsial, nama proyek, dan ekspor. Uji integrasi RoBERTa bersifat opsional
-dan memerlukan model serta variabel lingkungan `RUN_SLOW=1`.
