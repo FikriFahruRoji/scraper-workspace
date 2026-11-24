@@ -1,76 +1,14 @@
-# Scraper Workspace
+# <img src="workspace_app/resources/icon.svg" width="40" height="40" alt=""> Scraper Workspace
 
-Satu aplikasi Streamlit untuk mengumpulkan dan mengekspor data
-dari **20 sumber**. Workspace memakai **Scrapling stealth** untuk jalur
-browser dan menyimpan riwayat pekerjaan di SQLite.
+Kumpulkan, bersihkan, dan analisis data riset dalam satu aplikasi lokal.
+Pilih dari **20 sumber**, simpan riwayat di komputer, dan ekspor hasil ke **Excel, CSV, atau JSON**.
 
-| Sumber | Data yang tersedia |
-| --- | --- |
-| Google Scholar | Profil publik, metrik dan riwayat sitasi, atau publikasi berdasarkan kata kunci |
-| Berita | Artikel dari 10 portal Indonesia |
-| SINTA | Penulis per afiliasi, profil dan metrik penulis (skor SINTA, Scopus, Google Scholar, WoS), serta contoh dokumen |
-| Google Maps Review | Ulasan tempat berdasarkan URL atau nama lokasi |
-| Google Maps Lokasi | Daftar tempat relevan berdasarkan kata kunci: alamat, rating, koordinat, dan detail opsional |
-| Play Store | Ulasan aplikasi berdasarkan package ID |
-| App Store | Ulasan aplikasi iOS berdasarkan ID atau link App Store, per toko negara (hingga 500 ulasan terbaru atau paling membantu per aplikasi) |
-| Instagram, Threads, dan X | Post, profil, pencarian, atau balasan sesuai sumber |
-| YouTube | Komentar video dan balasan |
-| Saham | Harga historis OHLCV, dividen, dan split; juga kripto dan kurs mata uang (pasar **Kurs**, misalnya `USD/IDR`) |
-| World Bank | Indikator pembangunan (PDB, inflasi, penduduk, dan lainnya) per negara dan tahun |
-| IMF | Data ekonomi makro World Economic Outlook per negara dan tahun, aktual dan proyeksi |
-| Harga Pangan (BI) | Harga harian 21 komoditas pangan strategis (beras, cabai, bawang, daging, telur, minyak goreng, gula) per provinsi atau nasional dan jenis pasar, dari PIHPS Bank Indonesia |
-| OECD | Seluruh katalog dataset OECD (sekitar 1.500) lewat API SDMX, dengan pilihan wilayah dan rincian bernama: inflasi, PDB, pajak, kesehatan, dan lainnya |
-| Gempa (USGS) | Riwayat gempa Indonesia, seluruh dunia, atau kotak koordinat sendiri dari katalog USGS sejak 1900: waktu WIB dan UTC, magnitudo, kedalaman, koordinat, potensi tsunami, laporan dirasakan |
-| Titik Api (NASA FIRMS) | Titik api (hotspot) satelit VIIRS atau MODIS per negara dan tahun sejak 2000: lokasi, waktu WIB dan UTC, daya radiasi api (FRP), keyakinan, siang atau malam, dan jenis |
-| Bencana (GDACS & EONET) | Kejadian bencana selain gempa di Indonesia atau seluruh dunia sejak 2000, dengan provinsi dan kabupaten/kota: banjir, siklon tropis, gunung api, kekeringan, kebakaran hutan (GDACS, dengan level peringatan hijau/oranye/merah), serta tanah longsor, suhu ekstrem, dan kabut asap (NASA EONET): waktu WIB dan UTC, koordinat, keparahan, status |
-| Cuaca (Open-Meteo) | Cuaca harian atau per jam (suhu, hujan, angin, kelembapan, dan lainnya) untuk lokasi mana pun, riwayat sejak 1940 atau prakiraan 16 hari |
+**[Unduh ZIP](https://github.com/FikriFahruRoji/scraper-workspace/archive/refs/heads/main.zip)** ·
+**[Instalasi macOS / Windows](#instalasi-di-macos-atau-windows)** ·
+[Contoh penggunaan](#contoh-penggunaan) ·
+[Katalog sumber](#katalog-sumber-data)
 
-Katalog USGS memuat gempa seluruh dunia sejak 1900. Satu permintaan dibatasi 20.000 kejadian, jadi
-rentang tanggal dipecah otomatis. Untuk Indonesia, M 4,5+ berarti sekitar 1.000 gempa per tahun; turunkan
-magnitudo hanya untuk rentang pendek. Kotak Indonesia (11,5°LS–6,5°LU, 94°–142°BT) mencakup sedikit wilayah
-tetangga, jadi cek kolom `tempat`. Data USGS adalah domain publik.
-
-OECD memakai API SDMX publik (sdmx.oecd.org). Formulir menampilkan seluruh katalog OECD (sekitar 1.500 dataset,
-bisa dicari dengan mengetik; lima dataset yang terbukti memuat Indonesia diberi tanda bintang dan ada di atas). Setelah
-dataset dipilih, formulir memuat dimensinya (wilayah, ukuran, satuan, usia, dan lainnya) dan hanya menawarkan kode yang
-benar-benar punya data, lengkap dengan namanya. Dimensi yang cuma punya satu nilai ditampilkan sebagai keterangan tetap.
-Daftar dataset disimpan di komputer selama seminggu; pemuatan pertama bisa sampai satu menit. Di hasil, dimensi yang
-berubah menjadi kolom dan yang tetap dicatat sekali di metadata pekerjaan. OECD membatasi permintaan data per jam
-(sekitar 20), jadi satu pengambilan hanya memakai satu permintaan data. Tidak semua wilayah ada di semua dataset:
-Indonesia ada di CPI, neraca nasional, pajak Asia-Pasifik, belanja kesehatan, dan harapan hidup, tetapi tidak di
-sebagian dataset ketenagakerjaan dan kependudukan.
-
-Titik api NASA FIRMS diambil dari arsip standar per negara dan tahun (tanpa kunci). Arsip baru lengkap
-setelah tahun kalender berakhir, jadi data terbaru adalah tahun lalu; data mendekati waktu nyata dan
-area bebas memerlukan MAP_KEY pribadi dan belum didukung. VIIRS (375 m) mulai 2012, MODIS (1 km) mulai 2000.
-Satu tahun VIIRS untuk Indonesia bisa ratusan ribu titik, jadi ada batas jumlah titik bawaan 200.000.
-
-Bencana diambil per bulan dari GDACS (gdacs.org) dan NASA EONET, keduanya tanpa kunci. Wilayah Indonesia di GDACS
-berarti kejadian yang mengenai Indonesia, jadi siklon yang tidak menyentuh daratan hanya muncul di Seluruh dunia; di EONET
-berarti kotak koordinat Indonesia. Banyak kejadian EONET disalin dari GDACS; bila keduanya dipilih, salinan itu dibuang.
-Setiap kejadian diberi kolom `provinsi` dan `kabupaten_kota` dari lintang dan bujurnya,
-dihitung di komputer sendiri dengan batas wilayah BPS 2020 yang disederhanakan (geoBoundaries/OCHA, CC BY 3.0 IGO;
-38 provinsi termasuk pemekaran Papua 2022; dibangun ulang dengan `tools/build_wilayah.py`). Titik di laut sampai 20 km
-dari pantai diberi kabupaten terdekat dan jaraknya di `jarak_wilayah_km`; titik lebih jauh atau di luar Indonesia dibiarkan
-kosong. Untuk kejadian berbentuk area, titiknya adalah titik tengah area itu.
-Gempa tidak termasuk (pakai sumber Gempa USGS). Untuk data korban dan kerusakan per kabupaten, sumber resminya DIBI
-BNPB, yang belum bisa diambil tanpa login.
-
-Open-Meteo mencocokkan nama lokasi ke hasil pertama pencarian
-lokasinya, jadi periksa kolom `lokasi` (atau tulis koordinat `lintang,bujur`). Data cuaca berlisensi
-CC BY 4.0 untuk penggunaan non-komersial.
-
-World Bank, IMF, OECD, USGS, NASA FIRMS, GDACS, NASA EONET, Open-Meteo, dan Harga Pangan (PIHPS BI) memakai API publik tanpa kunci, login, atau browser. Nilai IMF dalam satuan
-penuh (jiwa, dolar AS), bukan juta atau miliar, dan setiap baris diberi tanda **aktual** atau
-**proyeksi**. Hasilnya berupa tabel panjang (satu baris per negara, indikator, dan tahun) dengan
-grafik per indikator di tab **Ringkasan**.
-
-SINTA memakai situs publik sinta.kemdiktisaintek.go.id tanpa login, lewat sesi Scrapling yang meniru Chrome
-(SINTA menolak klien non-browser dengan 403). Paket `sinta-scraper` 1.2.0 tidak dipakai karena masih menunjuk
-ke domain lama dan markup yang sudah berubah. Daftar penulis per afiliasi dan profil penulis stabil dan lengkap.
-**Daftar dokumen per penulis tidak lengkap**: SINTA hanya menampilkan 10 dokumen acak per daftar, tanpa halaman
-berikutnya, dan isinya berganti tiap diminta. Karena itu mode **Contoh dokumen** menandai setiap baris sebagai
-contoh. Untuk jumlah dokumen dan sitasi yang utuh, pakai mode **Profil penulis**.
+![Halaman Lakukan Scraping di Scraper Workspace dengan katalog sumber, pencarian, dan filter kategori](docs/images/scraper-workspace.png)
 
 ## Instalasi di macOS atau Windows
 
@@ -141,6 +79,15 @@ $env:STREAMLIT_SERVER_PORT = "8511"
 
 Untuk kedua perintah tersebut, buka [Scraper Workspace di port 8511](http://127.0.0.1:8511).
 
+## Contoh penggunaan
+
+**Mengumpulkan publikasi untuk tinjauan pustaka**
+
+1. Di **Lakukan Scraping**, pilih **Google Scholar** dan buka mode **Cari Kata Kunci**.
+2. Masukkan topik riset, misalnya `digital literacy higher education`, lalu isi **Nama proyek**.
+3. Klik **Mulai Ambil Data**. Setelah proses selesai, buka **Dataset** dan pilih pekerjaan tadi.
+4. Tinjau judul dan metadata publikasi, lalu unduh **Excel** atau **CSV** untuk menyaring hasil.
+
 ## Cara pakai
 
 - Menu sidebar dibagi empat: **Data** (Dataset, Lakukan Scraping), **Preprocessing**
@@ -189,6 +136,81 @@ Data Workspace disimpan di `~/Library/Application Support/ScraperWorkspace`
 pada macOS atau `%LOCALAPPDATA%\ScraperWorkspace` pada Windows. Penghapusan
 riwayat terpisah dari penyimpanan profil login. Berkas riwayat, cookie, profil
 browser, dan hasil ekspor tidak diperlukan untuk menjalankan kode dari GitHub.
+
+## Katalog sumber data
+
+| Sumber | Data yang tersedia |
+| --- | --- |
+| Google Scholar | Profil publik, metrik dan riwayat sitasi, atau publikasi berdasarkan kata kunci |
+| Berita | Artikel dari 10 portal Indonesia |
+| SINTA | Penulis per afiliasi, profil dan metrik penulis (skor SINTA, Scopus, Google Scholar, WoS), serta contoh dokumen |
+| Google Maps Review | Ulasan tempat berdasarkan URL atau nama lokasi |
+| Google Maps Lokasi | Daftar tempat relevan berdasarkan kata kunci: alamat, rating, koordinat, dan detail opsional |
+| Play Store | Ulasan aplikasi berdasarkan package ID |
+| App Store | Ulasan aplikasi iOS berdasarkan ID atau link App Store, per toko negara (hingga 500 ulasan terbaru atau paling membantu per aplikasi) |
+| Instagram, Threads, dan X | Post, profil, pencarian, atau balasan sesuai sumber |
+| YouTube | Komentar video dan balasan |
+| Saham | Harga historis OHLCV, dividen, dan split; juga kripto dan kurs mata uang (pasar **Kurs**, misalnya `USD/IDR`) |
+| World Bank | Indikator pembangunan (PDB, inflasi, penduduk, dan lainnya) per negara dan tahun |
+| IMF | Data ekonomi makro World Economic Outlook per negara dan tahun, aktual dan proyeksi |
+| Harga Pangan (BI) | Harga harian 21 komoditas pangan strategis (beras, cabai, bawang, daging, telur, minyak goreng, gula) per provinsi atau nasional dan jenis pasar, dari PIHPS Bank Indonesia |
+| OECD | Seluruh katalog dataset OECD (sekitar 1.500) lewat API SDMX, dengan pilihan wilayah dan rincian bernama: inflasi, PDB, pajak, kesehatan, dan lainnya |
+| Gempa (USGS) | Riwayat gempa Indonesia, seluruh dunia, atau kotak koordinat sendiri dari katalog USGS sejak 1900: waktu WIB dan UTC, magnitudo, kedalaman, koordinat, potensi tsunami, laporan dirasakan |
+| Titik Api (NASA FIRMS) | Titik api (hotspot) satelit VIIRS atau MODIS per negara dan tahun sejak 2000: lokasi, waktu WIB dan UTC, daya radiasi api (FRP), keyakinan, siang atau malam, dan jenis |
+| Bencana (GDACS & EONET) | Kejadian bencana selain gempa di Indonesia atau seluruh dunia sejak 2000, dengan provinsi dan kabupaten/kota: banjir, siklon tropis, gunung api, kekeringan, kebakaran hutan (GDACS, dengan level peringatan hijau/oranye/merah), serta tanah longsor, suhu ekstrem, dan kabut asap (NASA EONET): waktu WIB dan UTC, koordinat, keparahan, status |
+| Cuaca (Open-Meteo) | Cuaca harian atau per jam (suhu, hujan, angin, kelembapan, dan lainnya) untuk lokasi mana pun, riwayat sejak 1940 atau prakiraan 16 hari |
+
+<details>
+<summary>Cakupan, batas pengambilan, dan catatan per sumber</summary>
+
+Katalog USGS memuat gempa seluruh dunia sejak 1900. Satu permintaan dibatasi 20.000 kejadian, jadi
+rentang tanggal dipecah otomatis. Untuk Indonesia, M 4,5+ berarti sekitar 1.000 gempa per tahun; turunkan
+magnitudo hanya untuk rentang pendek. Kotak Indonesia (11,5°LS–6,5°LU, 94°–142°BT) mencakup sedikit wilayah
+tetangga, jadi cek kolom `tempat`. Data USGS adalah domain publik.
+
+OECD memakai API SDMX publik (sdmx.oecd.org). Formulir menampilkan seluruh katalog OECD (sekitar 1.500 dataset,
+bisa dicari dengan mengetik; lima dataset yang terbukti memuat Indonesia diberi tanda bintang dan ada di atas). Setelah
+dataset dipilih, formulir memuat dimensinya (wilayah, ukuran, satuan, usia, dan lainnya) dan hanya menawarkan kode yang
+benar-benar punya data, lengkap dengan namanya. Dimensi yang cuma punya satu nilai ditampilkan sebagai keterangan tetap.
+Daftar dataset disimpan di komputer selama seminggu; pemuatan pertama bisa sampai satu menit. Di hasil, dimensi yang
+berubah menjadi kolom dan yang tetap dicatat sekali di metadata pekerjaan. OECD membatasi permintaan data per jam
+(sekitar 20), jadi satu pengambilan hanya memakai satu permintaan data. Tidak semua wilayah ada di semua dataset:
+Indonesia ada di CPI, neraca nasional, pajak Asia-Pasifik, belanja kesehatan, dan harapan hidup, tetapi tidak di
+sebagian dataset ketenagakerjaan dan kependudukan.
+
+Titik api NASA FIRMS diambil dari arsip standar per negara dan tahun (tanpa kunci). Arsip baru lengkap
+setelah tahun kalender berakhir, jadi data terbaru adalah tahun lalu; data mendekati waktu nyata dan
+area bebas memerlukan MAP_KEY pribadi dan belum didukung. VIIRS (375 m) mulai 2012, MODIS (1 km) mulai 2000.
+Satu tahun VIIRS untuk Indonesia bisa ratusan ribu titik, jadi ada batas jumlah titik bawaan 200.000.
+
+Bencana diambil per bulan dari GDACS (gdacs.org) dan NASA EONET, keduanya tanpa kunci. Wilayah Indonesia di GDACS
+berarti kejadian yang mengenai Indonesia, jadi siklon yang tidak menyentuh daratan hanya muncul di Seluruh dunia; di EONET
+berarti kotak koordinat Indonesia. Banyak kejadian EONET disalin dari GDACS; bila keduanya dipilih, salinan itu dibuang.
+Setiap kejadian diberi kolom `provinsi` dan `kabupaten_kota` dari lintang dan bujurnya,
+dihitung di komputer sendiri dengan batas wilayah BPS 2020 yang disederhanakan (geoBoundaries/OCHA, CC BY 3.0 IGO;
+38 provinsi termasuk pemekaran Papua 2022; dibangun ulang dengan `tools/build_wilayah.py`). Titik di laut sampai 20 km
+dari pantai diberi kabupaten terdekat dan jaraknya di `jarak_wilayah_km`; titik lebih jauh atau di luar Indonesia dibiarkan
+kosong. Untuk kejadian berbentuk area, titiknya adalah titik tengah area itu.
+Gempa tidak termasuk (pakai sumber Gempa USGS). Untuk data korban dan kerusakan per kabupaten, sumber resminya DIBI
+BNPB, yang belum bisa diambil tanpa login.
+
+Open-Meteo mencocokkan nama lokasi ke hasil pertama pencarian
+lokasinya, jadi periksa kolom `lokasi` (atau tulis koordinat `lintang,bujur`). Data cuaca berlisensi
+CC BY 4.0 untuk penggunaan non-komersial.
+
+World Bank, IMF, OECD, USGS, NASA FIRMS, GDACS, NASA EONET, Open-Meteo, dan Harga Pangan (PIHPS BI) memakai API publik tanpa kunci, login, atau browser. Nilai IMF dalam satuan
+penuh (jiwa, dolar AS), bukan juta atau miliar, dan setiap baris diberi tanda **aktual** atau
+**proyeksi**. Hasilnya berupa tabel panjang (satu baris per negara, indikator, dan tahun) dengan
+grafik per indikator di tab **Ringkasan**.
+
+SINTA memakai situs publik sinta.kemdiktisaintek.go.id tanpa login, lewat sesi Scrapling yang meniru Chrome
+(SINTA menolak klien non-browser dengan 403). Paket `sinta-scraper` 1.2.0 tidak dipakai karena masih menunjuk
+ke domain lama dan markup yang sudah berubah. Daftar penulis per afiliasi dan profil penulis stabil dan lengkap.
+**Daftar dokumen per penulis tidak lengkap**: SINTA hanya menampilkan 10 dokumen acak per daftar, tanpa halaman
+berikutnya, dan isinya berganti tiap diminta. Karena itu mode **Contoh dokumen** menandai setiap baris sebagai
+contoh. Untuk jumlah dokumen dan sitasi yang utuh, pakai mode **Profil penulis**.
+
+</details>
 
 ## Google Scholar
 
