@@ -74,25 +74,44 @@ contoh. Untuk jumlah dokumen dan sitasi yang utuh, pakai mode **Profil penulis**
 
 ## Jalankan di laptop
 
-1. Pasang **Python 3.11** dan siapkan koneksi internet untuk pemasangan awal.
-   Di macOS pastikan `python3.11` tersedia. Di Windows aktifkan Python Launcher
-   agar perintah `py -3.11` tersedia.
-2. Clone repositori atau ekstrak ZIP sumber.
-3. Jalankan **`Jalankan Scraper Workspace.command`** di macOS atau
-   **`Jalankan Scraper Workspace.bat`** di Windows. Launcher menyiapkan
-   lingkungan Python dan memasang Chromium untuk Scrapling.
-4. Buka [Scraper Workspace di localhost](http://127.0.0.1:8510).
-   Aplikasi lokal hanya mendengarkan di `127.0.0.1`.
+Pasang **Python 3.11**, lalu clone repositori atau ekstrak ZIP sumber. Pemasangan
+awal memerlukan internet untuk mengunduh dependensi dan Chromium.
 
-Jika macOS meminta menjalankan launcher dari Terminal, gunakan
-`bash "Jalankan Scraper Workspace.command"` dari folder proyek.
+### macOS
+
+Buka **`Jalankan Scraper Workspace.command`**. Jika menjalankan dari Terminal,
+masuk ke folder proyek dan jalankan:
+
+```bash
+bash "Jalankan Scraper Workspace.command"
+```
+
+### Windows
+
+Aktifkan Python Launcher saat memasang Python agar perintah `py -3.11` tersedia.
+Buka PowerShell di folder proyek. Jalankan tiga perintah berikut saat pemasangan
+awal atau setelah dependensi diperbarui.
+
+```powershell
+py -3.11 -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+.\.venv\Scripts\python.exe -m workspace_app.setup_runtime
+```
+
+Jalankan aplikasi dengan perintah berikut setiap kali membukanya.
+
+```powershell
+.\.venv\Scripts\python.exe -m streamlit run workspace_app.py --server.address 127.0.0.1 --server.port 8510
+```
+
+Setelah aplikasi berjalan, buka [Scraper Workspace di localhost](http://127.0.0.1:8510).
 
 ## Cara pakai
 
 - Menu sidebar dibagi empat: **Data** (Dataset, Lakukan Scraping), **Preprocessing**
   (Gabungkan Data, Preprocessing Data, Proses Berjalan, Dataset Preprocessing), **Analisis** (Rekomendasi Analisis,
   Sentimen, Statistik Data, Frekuensi Kata, Tren Waktu, Topik Teks, Jaringan Kata), dan **Info** (peta analisis per
-  jenis data, lihat docs/ANALISIS.md). Tampilan aplikasi selalu mode terang.
+  jenis data). Tampilan aplikasi selalu mode terang. [Panduan analisis](docs/ANALISIS.md)
 - **Lakukan Scraping**: pilih sumber dari katalog (bisa dicari dan difilter
   per kategori), klik **Kumpulkan Data**, isi parameter, periksa panel ringkasan, lalu klik
   **Mulai Ambil Data**. Satu pekerjaan atau login platform bisa aktif pada satu waktu dan
@@ -122,7 +141,10 @@ Jika macOS meminta menjalankan launcher dari Terminal, gunakan
   kolom, ringkasan angka, sebaran nilai), **Frekuensi Kata** (kata dan pasangan kata teratas),
   **Tren Waktu** (jumlah data per hari, minggu, atau bulan, dengan pembanding; zona waktu
   dihitung dalam WIB), **Topik Teks** (TF-IDF dan NMF), dan **Jaringan Kata** (kata yang
-  sering muncul bersama). Analisis teks memakai kolom `teks_bersih` bila dataset sudah
+  sering muncul bersama). Halaman **Sentimen** mendukung analisis ulasan dengan
+  label bintang atau model RoBERTa Indonesia. Metode RoBERTa memerlukan dependensi
+  opsional di `requirements-analysis.txt` dan unduhan model. Analisis kata dan topik
+  memakai kolom `teks_bersih` bila dataset sudah
   dipreprocessing, dan membersihkan teks sendiri bila belum (maksimal 20.000 teks pertama).
   Setiap tabel hasil bisa diunduh sebagai CSV.
 - Klik **Login platform** jika dibutuhkan oleh sumber (tidak tersedia untuk Google Maps Review dan Google Maps Lokasi).
@@ -231,7 +253,7 @@ scrapers/               Satu folder per sumber (news, gmaps, gmaps_places, insta
 scrapers/_shared/       Modul yang dipakai beberapa scraper (stealth_transport.py)
 tests/                  Uji otomatis
 tools/                  Pemeriksaan manual: transport, sumber publik, kinerja berita
-docs/                   Panduan deployment dan mode stealth
+docs/                   Panduan deployment, mode stealth, dan analisis
 .streamlit/             Konfigurasi Streamlit dan tema
 ```
 
@@ -249,16 +271,21 @@ hanya untuk menandai sumber data.
 
 ## Uji pengembang
 
-Setelah memasang dependensi dan menyiapkan lingkungan, jalankan:
+Setelah memasang dependensi, jalankan perintah berikut menggunakan Python dari
+lingkungan virtual proyek.
 
 ```bash
 python -m pip install pytest
 python -m pytest -q tests
+```
+
+Untuk pemeriksaan manual, jalankan:
+
+```bash
 python tools/check_news_performance.py
 python tools/check_transport.py
 ```
 
 Uji Workspace mencakup pipeline preprocessing, form seluruh sumber terdaftar, pekerjaan tunggal, penghentian, pemulihan
-hasil parsial, nama proyek, dan ekspor. Integrasi browser dan launcher
-gabungan telah diuji di macOS. Launcher Windows belum diuji pada perangkat
-Windows.
+hasil parsial, nama proyek, dan ekspor. Uji integrasi RoBERTa bersifat opsional
+dan memerlukan model serta variabel lingkungan `RUN_SLOW=1`.

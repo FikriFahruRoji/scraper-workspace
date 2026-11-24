@@ -1,11 +1,11 @@
 # Menjalankan aplikasi dengan Scrapling StealthySession
 
-Aplikasi memakai Scrapling 0.5.1 dan Streamlit 1.67.0. Jalankan lewat launcher di
-folder proyek (`Jalankan Scraper Workspace.command` di macOS, `.bat` di Windows),
-atau dari folder proyek:
+Aplikasi memakai Scrapling 0.5.1 dan Streamlit 1.67.0. Di macOS, jalankan
+`Jalankan Scraper Workspace.command` atau gunakan perintah di bawah dari folder
+proyek. Langkah untuk Windows tersedia di [README](../README.md#jalankan-di-laptop).
 
 ```bash
-.venv/bin/python -m streamlit run workspace_app.py
+.venv/bin/python -m streamlit run workspace_app.py --server.address 127.0.0.1 --server.port 8510
 ```
 
 Untuk instalasi baru, dari folder proyek:
@@ -13,7 +13,7 @@ Untuk instalasi baru, dari folder proyek:
 ```bash
 python3.11 -m venv .venv
 .venv/bin/python -m pip install -r requirements.txt
-.venv/bin/scrapling install --force
+.venv/bin/python -m workspace_app.setup_runtime
 ```
 
 Play Store dan saham menggunakan Google Chrome yang terpasang. Pada

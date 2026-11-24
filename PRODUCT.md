@@ -42,9 +42,10 @@ a third party.
 
 ## Operating Context
 
-- Runs locally via `Jalankan Scraper Workspace.command` (macOS) or `.bat`
-  (Windows) at `http://127.0.0.1:8510`; can also run on a single-operator Linux
-  server reached over SSH (see docs/DEPLOYMENT.md).
+- Runs locally at `http://127.0.0.1:8510` via `Jalankan Scraper Workspace.command`
+  on macOS or the PowerShell commands in [README.md](README.md) on Windows.
+  Also runs on a single-operator Linux server reached over SSH.
+  [Deployment guide](docs/DEPLOYMENT.md)
 - One job (scraping, preprocessing, or platform login) runs at a time; jobs keep
   running while the user moves between pages and can be stopped.
 - Core flow: Data catalogue → source form → job runs → Data → Dataset Kamu
