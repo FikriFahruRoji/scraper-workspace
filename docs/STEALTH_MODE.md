@@ -1,8 +1,10 @@
 # Menjalankan aplikasi dengan Scrapling StealthySession
 
-Aplikasi memakai Scrapling 0.5.1 dan Streamlit 1.67.0. Di macOS, jalankan
-`Jalankan Scraper Workspace.command` atau gunakan perintah di bawah dari folder
-proyek. Langkah untuk Windows tersedia di [README](../README.md#jalankan-di-laptop).
+Aplikasi memakai Scrapling 0.5.1 dan Streamlit 1.67.0. Gunakan launcher
+`.command` di macOS atau `.bat` di Windows untuk menyiapkan dan membuka
+aplikasi. [Panduan instalasi](../README.md#instalasi-di-macos-atau-windows)
+
+Pada macOS, kamu juga bisa menjalankan Streamlit langsung setelah instalasi:
 
 ```bash
 .venv/bin/python -m streamlit run workspace_app.py --server.address 127.0.0.1 --server.port 8510

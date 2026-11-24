@@ -72,39 +72,74 @@ ke domain lama dan markup yang sudah berubah. Daftar penulis per afiliasi dan pr
 berikutnya, dan isinya berganti tiap diminta. Karena itu mode **Contoh dokumen** menandai setiap baris sebagai
 contoh. Untuk jumlah dokumen dan sitasi yang utuh, pakai mode **Profil penulis**.
 
-## Jalankan di laptop
+## Instalasi di macOS atau Windows
 
-Pasang **Python 3.11**, lalu clone repositori atau ekstrak ZIP sumber. Pemasangan
-awal memerlukan internet untuk mengunduh dependensi dan Chromium.
+Siapkan koneksi internet untuk pemasangan pertama. Kedua launcher menyiapkan
+lingkungan Python di folder `.venv`, memasang dependensi, dan menyiapkan Chromium.
 
-### macOS
+### 1. Unduh dan ekstrak proyek
 
-Buka **`Jalankan Scraper Workspace.command`**. Jika menjalankan dari Terminal,
-masuk ke folder proyek dan jalankan:
+1. Buka repositori di GitHub, lalu pilih **Code → Download ZIP** di branch
+   `main`. [Repositori Scraper Workspace](https://github.com/FikriFahruRoji/scraper-workspace)
+2. Ekstrak ZIP ke folder yang bisa kamu akses, misalnya **Documents**. Di Windows,
+   klik kanan ZIP lalu pilih **Extract All**.
+3. Buka folder hasil ekstraksi. Kamu berada di folder yang tepat jika
+   `README.md` dan `workspace_app.py` terlihat bersama file launcher.
+
+### 2. Pasang Python 3.11
+
+- **macOS.** Unduh **macOS 64-bit universal2 installer** dari halaman resmi
+  Python 3.11.9, buka file `.pkg`, lalu ikuti langkah instalasinya. Setelah
+  selesai, buka **Applications → Python 3.11** dan klik dua kali
+  **Install Certificates.command**. Jika memakai
+  Homebrew, kamu juga dapat memasang Python dengan `brew install python@3.11`.
+  [Unduhan resmi Python 3.11.9](https://www.python.org/downloads/release/python-3119/)
+- **Windows.** Pasang **Python Install Manager** dari python.org. Buka PowerShell
+  dari menu Start, jalankan perintah di bawah, lalu tunggu selesai. Jika perintah
+  `py -3.11 --version` sudah menampilkan `Python 3.11.x`, Python sudah siap.
+  [Panduan resmi Python untuk Windows](https://docs.python.org/3.14/using/windows.html)
+
+  ```powershell
+  py install 3.11
+  py -3.11 --version
+  ```
+
+### 3. Buka aplikasi
+
+1. Kembali ke folder proyek. Klik dua kali **`Jalankan Scraper Workspace.command`**
+   di macOS atau **`Jalankan Scraper Workspace.bat`** di Windows.
+2. Biarkan jendela Terminal atau Command Prompt terbuka sambil menunggu
+   pemasangan selesai. Jika browser belum terbuka, buka
+   [Scraper Workspace di localhost](http://127.0.0.1:8510) setelah alamatnya
+   tampil di jendela launcher.
+3. Untuk menutup aplikasi, klik jendela launcher lalu tekan **Ctrl+C**. Untuk
+   membukanya kembali, klik dua kali launcher yang sama. Launcher memeriksa
+   perubahan `requirements.txt` dan memasang dependensi bila diperlukan.
+
+### Pemecahan masalah
+
+| Pesan atau gejala | Yang perlu dilakukan |
+| --- | --- |
+| Python 3.11 belum ditemukan | Selesaikan langkah 2, tutup jendela Terminal atau PowerShell lama, lalu buka lagi. Periksa dengan `python3.11 --version` di macOS atau `py -3.11 --version` di Windows. |
+| macOS menyatakan file `.command` tidak dapat dijalankan karena izin | Buka Terminal, ketik `bash ` (sertakan spasi), seret file launcher dari Finder ke jendela Terminal, lalu tekan Enter. Jalankan hanya file dari salinan repo yang kamu percayai. |
+| Pemasangan berhenti saat mengunduh paket atau Chromium | Periksa koneksi, tutup jendela launcher, lalu jalankan lagi. Pesan kesalahan tampil di jendela launcher. |
+| Port 8510 sedang digunakan | Jika Scraper Workspace sudah berjalan, buka tab yang ada. Jika port dipakai aplikasi lain, gunakan perintah port alternatif di bawah dari folder proyek. |
+| Lingkungan Python rusak setelah folder proyek dipindah | Tutup aplikasi, ubah nama folder `.venv` menjadi `.venv-lama`, lalu buka launcher lagi. Riwayat dan profil login tersimpan terpisah dari `.venv`. |
+
+**Port alternatif di macOS**
 
 ```bash
-bash "Jalankan Scraper Workspace.command"
+STREAMLIT_SERVER_PORT=8511 bash "Jalankan Scraper Workspace.command"
 ```
 
-### Windows
-
-Aktifkan Python Launcher saat memasang Python agar perintah `py -3.11` tersedia.
-Buka PowerShell di folder proyek. Jalankan tiga perintah berikut saat pemasangan
-awal atau setelah dependensi diperbarui.
+**Port alternatif di Windows (PowerShell)**
 
 ```powershell
-py -3.11 -m venv .venv
-.\.venv\Scripts\python.exe -m pip install -r requirements.txt
-.\.venv\Scripts\python.exe -m workspace_app.setup_runtime
+$env:STREAMLIT_SERVER_PORT = "8511"
+& ".\Jalankan Scraper Workspace.bat"
 ```
 
-Jalankan aplikasi dengan perintah berikut setiap kali membukanya.
-
-```powershell
-.\.venv\Scripts\python.exe -m streamlit run workspace_app.py --server.address 127.0.0.1 --server.port 8510
-```
-
-Setelah aplikasi berjalan, buka [Scraper Workspace di localhost](http://127.0.0.1:8510).
+Untuk kedua perintah tersebut, buka [Scraper Workspace di port 8511](http://127.0.0.1:8511).
 
 ## Cara pakai
 
