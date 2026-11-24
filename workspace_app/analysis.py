@@ -43,6 +43,7 @@ def default_text_columns(candidates):
 
 ZONE = "Asia/Jakarta"
 OFFSET_RE = r"(?:Z|[+-]\d{2}:?\d{2})\s*$"
+NUMBER_TEXT_RE = r"\s*[+-]?\d+(?:[.,]\d+)?\s*"  # numbers stored as text: not dates unless the column says so
 
 
 def parse_dates(series):
@@ -56,7 +57,10 @@ def parse_dates(series):
     zoned = pd.to_datetime(text[has_zone], errors="coerce", utc=True, format="mixed")
     zoned = zoned.dt.tz_convert(ZONE).dt.tz_localize(None)
     naive = pd.to_datetime(text[~has_zone], errors="coerce", format="mixed")
-    return pd.concat([zoned, naive]).reindex(series.index).astype("datetime64[ns]")
+    parsed = pd.concat([zoned, naive]).reindex(series.index)
+    # Numbers such as a latitude of "-6.2" can parse to years far outside what a nanosecond timestamp holds.
+    parsed = parsed.where(parsed.dt.year.between(1800, 2200))
+    return parsed.astype("datetime64[ns]")
 
 
 def date_columns(frame):
@@ -67,7 +71,9 @@ def date_columns(frame):
         if values.empty or pd.api.types.is_bool_dtype(values):
             continue
         sample = values.head(200)
-        if pd.api.types.is_numeric_dtype(sample) and not any(hint in column.lower() for hint in DATE_HINTS):
+        hinted = any(hint in column.lower() for hint in DATE_HINTS)
+        if not hinted and (pd.api.types.is_numeric_dtype(sample)
+                           or sample.astype(str).str.fullmatch(NUMBER_TEXT_RE).mean() >= 0.8):
             continue
         if parse_dates(sample).notna().mean() >= 0.8:
             found.append(column)

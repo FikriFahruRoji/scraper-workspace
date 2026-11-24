@@ -1,0 +1,10 @@
+# Tingkat model untuk menu Analisis (opsional). Aplikasi tetap jalan tanpa paket ini;
+# fitur yang membutuhkannya menampilkan perintah instal ini.
+#   pip install -r requirements-analysis.txt
+# Bobot model (sekitar 500 MB untuk sentimen) diunduh ke folder data aplikasi saat pertama dipakai,
+# setelah kamu setuju di halaman Sentimen.
+-r requirements.txt
+torch>=2.2
+transformers>=4.44
+huggingface_hub>=0.24
+safetensors>=0.4

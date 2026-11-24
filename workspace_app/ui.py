@@ -66,50 +66,26 @@ LIGHT_TOKENS = """--bg: #EEF1F4; --surface: #F8FAFB; --raised: #FFFFFF; --ink: #
   --line: #D5DCE4; --accent: #0E7490; --accent-ink: #F4FBFD; --accent-soft: rgba(14, 116, 144, .09);
   --danger: #B3261E; --danger-soft: rgba(179, 38, 30, .08); --danger-line: rgba(179, 38, 30, .35);
   --warn: #8F4A0B; --shadow: 0 10px 24px -14px rgba(16, 24, 32, .28); --sidebar: #F8FAFB;"""
-DARK_TOKENS = """--bg: #0B1117; --surface: #121A22; --raised: #18232D; --ink: #E4EAF0; --muted: #9AA8B6;
-  --line: #243240; --accent: #4DC0D8; --accent-ink: #04212A; --accent-soft: rgba(77, 192, 216, .12);
-  --danger: #F07178; --danger-soft: rgba(240, 113, 120, .10); --danger-line: rgba(240, 113, 120, .4);
-  --warn: #E8A24A; --shadow: 0 10px 24px -14px rgba(0, 0, 0, .7); --sidebar: #0E151C;"""
-
-
-def theme_type():
-    """The theme Streamlit is showing now ("light" or "dark"), or None before the browser reported it."""
-    try:
-        return st.context.theme.type
-    except Exception:
-        return None
-
-
-def token_css(theme):
-    """Color tokens. Python sets the starting theme (the system setting until the browser reports one);
-    THEME_SCRIPT then marks the theme Streamlit is really showing, so the in-app chooser wins."""
-    start = (f":root {{ {DARK_TOKENS} }}" if theme == "dark" else f":root {{ {LIGHT_TOKENS} }}"
-             if theme == "light" else
-             f":root {{ {LIGHT_TOKENS} }} @media (prefers-color-scheme: dark) {{ :root {{ {DARK_TOKENS} }} }}")
-    return (start + f' :root[data-nct-theme="light"] {{ {LIGHT_TOKENS} }}'
-            f' :root[data-nct-theme="dark"] {{ {DARK_TOKENS} }}')
-
-
-# Streamlit does not rerun the script when the theme is changed in its menu, so the page reads its own
-# background colour and marks the active theme. Static code, no user content.
-THEME_SCRIPT = """
+# Streamlit remembers a theme chosen earlier (System/Dark) per page in localStorage and would show it over the
+# config theme. The app is light only, so such entries are removed and the page reloads once. Static code.
+CLEAR_THEME_SCRIPT = """
 (function () {
-  if (window.__nctTheme) return;
-  window.__nctTheme = true;
-  function apply() {
-    var app = document.querySelector('.stApp');
-    var rgb = app && getComputedStyle(app).backgroundColor.match(/\\d+/g);
-    if (!rgb) return;
-    var light = (0.2126 * rgb[0] + 0.7152 * rgb[1] + 0.0722 * rgb[2]) / 255;
-    document.documentElement.setAttribute('data-nct-theme', light < 0.5 ? 'dark' : 'light');
+  var stale = false;
+  for (var i = localStorage.length - 1; i >= 0; i--) {
+    var key = localStorage.key(i);
+    if (key && key.indexOf('stActiveTheme-') === 0 && !/Custom|Light/.test(localStorage.getItem(key) || '')) {
+      localStorage.removeItem(key);
+      stale = true;
+    }
   }
-  apply();
-  setInterval(apply, 300);
+  if (stale && !sessionStorage.getItem('nct-theme-cleared')) {
+    sessionStorage.setItem('nct-theme-cleared', '1');
+    location.reload();
+  }
 })();
 """
 
 
-# Tokens are injected separately (see inject_css) so they follow the theme chosen in the app menu.
 CSS = """
 <style>
 /* Page */
@@ -144,8 +120,6 @@ CSS = """
 .st-key-sidebar-bottom { margin-top: auto; justify-content: flex-end; padding-bottom: 1rem; }
 .st-key-sidebar-footer { border-top: 1px solid var(--line); padding-top: .75rem; margin-top: .5rem; }
 .st-key-sidebar-footer [data-testid="stCaptionContainer"] { font-size: .8rem; }
-.settings-title { text-transform: uppercase; letter-spacing: .06em; font-size: .8rem; font-weight: 500; color: var(--muted);
-    border-top: 1px solid var(--line); padding-top: .75rem; }
 
 /* Header card */
 .st-key-page-header { background: var(--surface); border: 1px solid var(--line); border-radius: 16px;
@@ -246,41 +220,9 @@ dl.method dd { color: var(--ink); font-weight: 500; overflow-wrap: anywhere; }
 """
 
 
-THEME_LABELS = {"system": "System", "light": "Light", "dark": "Dark"}
-
-
-def apply_theme_pref(pref, paths):
-    """Make Streamlit show the chosen theme on every page.
-
-    Streamlit keeps its theme choice per page address in localStorage and reads it on load, so the choice is
-    written for all pages and the page reloads once when the current page held a different value.
-    """
-    label = json.dumps(json.dumps(THEME_LABELS.get(pref, "System")))
-    script = """
-(function () {
-  var value = %s, paths = %s, here = location.pathname, stale = false;
-  paths.forEach(function (path) {
-    var key = 'stActiveTheme-' + path + '-v2';
-    if (localStorage.getItem(key) !== value) {
-      localStorage.setItem(key, value);
-      if (path === here) stale = true;
-    }
-  });
-  var seen = 'nct-theme-reload';
-  if (stale && sessionStorage.getItem(seen) !== value + here) {
-    sessionStorage.setItem(seen, value + here);
-    location.reload();
-  } else if (!stale) {
-    sessionStorage.removeItem(seen);
-  }
-})();
-""" % (label, json.dumps(list(paths)))
-    st.html(f"<script>{script}</script>", unsafe_allow_javascript=True)
-
-
 def inject_css():
-    st.html(CSS.replace("</style>", token_css(theme_type()) + "\n</style>", 1))
-    st.html(f"<script>{THEME_SCRIPT}</script>", unsafe_allow_javascript=True)
+    st.html(CSS.replace("</style>", f":root {{ {LIGHT_TOKENS} }}\n</style>", 1))
+    st.html(f"<script>{CLEAR_THEME_SCRIPT}</script>", unsafe_allow_javascript=True)
 
 
 ICONS = Path(__file__).resolve().parent / "resources" / "icons"

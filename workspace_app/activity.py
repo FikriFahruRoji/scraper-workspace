@@ -25,7 +25,8 @@ def activity(manager, framed=True):
             info.info(f"{title} · login di jendela browser", icon=":material/login:")
         else:
             count = ui.fmt(manager.saved_count(active["id"]))
-            verb = "preprocessing berjalan" if active["source"] == "preprocessing" else "mengambil data"
+            verb = {"preprocessing": "preprocessing berjalan", "sentimen": "analisis sentimen berjalan"}.get(
+                active["source"], "mengambil data")
             info.info(f"{title} · {verb} · {count} baris tersimpan", icon="spinner")
         if controls.button("Hentikan", key=f"workspace-stop-{'top' if framed else 'form'}",
                            disabled=active["stopping"], icon=":material/stop_circle:", width="stretch"):

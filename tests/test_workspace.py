@@ -62,7 +62,13 @@ def test_recover_interrupted_checkpoint(tmp_path):
     assert csv_bytes(result["rows"]).decode("utf-8-sig").splitlines() == ["title", "A"]
 
 
-def test_all_source_forms_and_module_loading(tmp_path):
+def test_all_source_forms_and_module_loading(tmp_path, monkeypatch):
+    from workspace_app import oecd_view  # the OECD form lists datasets from the network: use a fixture instead
+    monkeypatch.setattr(oecd_view, "_catalogue", lambda: [
+        {"flow": "OECD.SDD.TPS,DSD_PRICES@DF_PRICES_ALL,1.0", "name": "Consumer price indices"}])
+    monkeypatch.setattr(oecd_view, "_structure", lambda flow: {"observations": 10, "dims": [
+        {"id": "REF_AREA", "name": "Reference area", "codes": [("IDN", "Indonesia"), ("FRA", "France")]},
+        {"id": "FREQ", "name": "Frequency", "codes": [("A", "Annual"), ("M", "Monthly")]}]})
     code = """
 import streamlit as st
 from workspace_app.views import source_page
@@ -537,17 +543,6 @@ def test_analysis_and_merge_pages_render(tmp_path, monkeypatch):
     at.run()
     assert not at.exception
     assert at.title[0].value == "Gabungkan Data"
-
-
-def test_settings_persist_theme_and_ignore_bad_values(tmp_path):
-    from workspace_app import settings
-    assert settings.load(tmp_path / "nothing")["tema"] == "system"
-    settings.save(tmp_path / "data", tema="dark")
-    assert settings.load(tmp_path / "data")["tema"] == "dark"
-    settings.save(tmp_path / "data", tema="neon", lain="x")
-    assert settings.load(tmp_path / "data") == {"tema": "dark"}
-    (tmp_path / "data" / "settings.json").write_text("[1, 2]")
-    assert settings.load(tmp_path / "data")["tema"] == "system"
 
 
 def test_running_job_notice_sits_under_the_start_button(tmp_path, monkeypatch):

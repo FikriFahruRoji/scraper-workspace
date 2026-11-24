@@ -108,7 +108,7 @@ def time_limit(source):
                            "sudah terkumpul tetap disimpan.")
 
 
-OPEN_DATA = ("worldbank", "imf", "usgs", "firms", "openmeteo", "sinta", "pangan")
+OPEN_DATA = ("worldbank", "imf", "oecd", "usgs", "firms", "bencana", "openmeteo", "sinta", "pangan")
 
 
 def params_for(source, mode):

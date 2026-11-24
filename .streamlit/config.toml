@@ -6,13 +6,14 @@ port = 8510
 gatherUsageStats = false
 
 [client]
-# The app menu is hidden: the theme is chosen in the sidebar under Pengaturan.
+# The app menu is hidden; the app has one light theme.
 toolbarMode = "minimal"
 
 # Palette "nocturnal": cool slate neutrals tinted toward the accent hue (about 205),
-# one cyan accent, separate semantic colors. Light and dark follow the system setting.
-# The same values live in workspace_app/ui.py as CSS variables.
+# one cyan accent, separate semantic colors. Light only.
+# The same values live in workspace_app/ui.py as CSS variables (LIGHT_TOKENS).
 [theme]
+base = "light"
 font = "Geologica:https://fonts.googleapis.com/css2?family=Geologica:wght@300;400;500;600;700&display=swap"
 headingFont = "Geologica"
 headingFontWeights = [700, 600, 600, 600, 600, 600]
@@ -21,8 +22,6 @@ baseFontSize = 15
 baseRadius = "0.75rem"
 showWidgetBorder = true
 chartCategoricalColors = ["#2B93AE", "#D98B3A", "#6E8F5A", "#B5547A", "#7A86C9", "#C7B04A", "#5F6B78", "#3FA796"]
-
-[theme.light]
 primaryColor = "#0E7490"
 backgroundColor = "#EEF1F4"
 secondaryBackgroundColor = "#F8FAFB"
@@ -38,26 +37,6 @@ violetColor = "#6D5BC0"
 grayColor = "#4B5663"
 dataframeHeaderBackgroundColor = "#E6EBF0"
 
-[theme.light.sidebar]
+[theme.sidebar]
 backgroundColor = "#F8FAFB"
 secondaryBackgroundColor = "#EEF1F4"
-
-[theme.dark]
-primaryColor = "#4DC0D8"
-backgroundColor = "#0B1117"
-secondaryBackgroundColor = "#121A22"
-textColor = "#E4EAF0"
-borderColor = "#243240"
-linkColor = "#4DC0D8"
-greenColor = "#5CC98A"
-redColor = "#F07178"
-orangeColor = "#E8A24A"
-yellowColor = "#D9C25A"
-blueColor = "#6AA8E8"
-violetColor = "#9B8CE0"
-grayColor = "#9AA8B6"
-dataframeHeaderBackgroundColor = "#18232D"
-
-[theme.dark.sidebar]
-backgroundColor = "#0E151C"
-secondaryBackgroundColor = "#121A22"

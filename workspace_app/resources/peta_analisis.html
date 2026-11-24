@@ -1,0 +1,236 @@
+<style>
+/* Peta Analisis (Info page). Scoped to .peta, coloured with the app's tokens, cards match the app's panels
+   (surface, 1px line, 16px radius). Same content as docs/ANALISIS.md. */
+.peta { display: grid; gap: 28px; color: var(--ink); line-height: 1.55; font-size: .95rem; padding-bottom: 40px }
+.peta * { box-sizing: border-box }
+.peta h2, .peta h3 { margin: 0; color: var(--ink); text-wrap: balance; line-height: 1.25 }
+.peta h2 { font-size: 1.15rem; font-weight: 700 }
+.peta h3 { font-size: 1.05rem; font-weight: 700 }
+.peta p { margin: 0 }
+.peta .muted { color: var(--muted) }
+.peta .card { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 20px 22px; display: grid; gap: 14px; min-width: 0 }
+.peta .section { display: grid; gap: 12px }
+.peta .section > .lead { color: var(--muted); max-width: 80ch }
+
+/* Intro + status */
+.peta .intro { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: 20px; align-items: start }
+.peta .intro p { color: var(--muted); max-width: 70ch }
+.peta .stages { display: grid; gap: 8px }
+.peta .stage { display: flex; gap: 10px; align-items: baseline }
+.peta .chip { display: inline-block; padding: 1px 9px; border-radius: 999px; font-size: .74rem; font-weight: 600; white-space: nowrap; line-height: 1.7 }
+.peta .chip.done { background: var(--accent-soft); color: var(--accent) }
+.peta .chip.plan { background: color-mix(in srgb, var(--warn) 12%, transparent); color: var(--warn) }
+.peta .chip.base { background: var(--bg); color: var(--muted); border: 1px solid var(--line) }
+
+/* Jump list of families */
+.peta .jump { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px }
+.peta .jump a { display: flex; gap: 10px; align-items: center; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px;
+  background: var(--raised); color: var(--ink); text-decoration: none; font-weight: 600; font-size: .88rem; line-height: 1.25 }
+.peta .jump a:hover, .peta .jump a:focus-visible { border-color: var(--accent); outline: none }
+.peta .jump small { display: block; font-weight: 400; color: var(--muted); font-size: .76rem }
+.peta .letter { flex: none; width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center; background: var(--accent-soft);
+  color: var(--accent); font-weight: 800 }
+
+/* Principles */
+.peta .principles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px }
+.peta .principle { background: var(--raised); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; display: grid; gap: 4px; align-content: start }
+.peta .principle b { font-size: .92rem }
+.peta .principle span { color: var(--muted); font-size: .88rem }
+
+/* Detection rules */
+.peta .rules { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px }
+.peta .rule { border: 1px dashed var(--line); border-radius: 12px; padding: 12px 14px; display: grid; gap: 6px; background: var(--raised) }
+.peta .rule .to { font-weight: 700; font-size: .9rem }
+
+/* Family cards */
+.peta .family-head { display: flex; gap: 14px; align-items: flex-start }
+.peta .family-head .letter { width: 44px; height: 44px; border-radius: 12px; font-size: 1.35rem; background: var(--ink); color: var(--raised) }
+.peta .family-head .meta { color: var(--muted); font-size: .86rem; margin-top: 2px }
+.peta .tablebox { overflow-x: auto; border: 1px solid var(--line); border-radius: 12px; background: var(--raised) }
+.peta table { border-collapse: collapse; width: 100%; min-width: 640px; font-size: .88rem; margin: 0 }
+.peta th, .peta td { text-align: left; padding: 9px 14px; border: 0; border-bottom: 1px solid var(--line); vertical-align: top; color: var(--ink) }
+.peta th { font-size: .72rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); background: var(--bg) }
+.peta td:first-child { font-weight: 600; width: 22% }
+.peta td:nth-child(3) { color: var(--muted); width: 18% }
+.peta td:last-child { width: 1% ; white-space: nowrap }
+.peta tr:last-child td { border-bottom: 0 }
+.peta code { font-family: ui-monospace, Menlo, monospace; font-size: .84em; background: var(--accent-soft); color: var(--ink); padding: 1px 5px; border-radius: 4px; overflow-wrap: anywhere }
+.peta .note { color: var(--muted); font-size: .88rem; border-left: 3px solid var(--line); padding-left: 10px }
+
+/* References */
+.peta .refs { margin: 0; padding-left: 1.2em; columns: 2 420px; column-gap: 32px; color: var(--muted); font-size: .84rem }
+.peta .refs li { break-inside: avoid; margin-bottom: 6px }
+
+@media (min-width: 1500px) { .peta .jump { grid-template-columns: repeat(8, minmax(0, 1fr)) } }
+@media (max-width: 1200px) { .peta .rules { grid-template-columns: repeat(3, minmax(0, 1fr)) } }
+@media (max-width: 1100px) { .peta .principles { grid-template-columns: repeat(2, minmax(0, 1fr)) } }
+@media (max-width: 900px) { .peta .intro { grid-template-columns: 1fr } }
+@media (max-width: 640px) { .peta .jump, .peta .rules { grid-template-columns: repeat(2, minmax(0, 1fr)) }
+  .peta .principles { grid-template-columns: 1fr } }
+</style>
+
+<div class="peta">
+  <div class="card intro">
+    <p>Dua puluh sumber data dikelompokkan menjadi tujuh keluarga menurut karakteristiknya. Tiap keluarga punya analisis, library gratis, dan syarat data sendiri. Semuanya berjalan di laptop kamu, tanpa token dan tanpa LLM.</p>
+    <div class="stages">
+      <div class="stage"><span class="chip done">Tersedia</span><span>Rekomendasi Analisis dan Sentimen (keluarga A)</span></div>
+      <div class="stage"><span class="chip plan">Berikutnya</span><span>B, C, D, F, E, G, lalu lintas dataset</span></div>
+    </div>
+  </div>
+
+  <div class="jump">
+    <a href="#peta-a"><span class="letter">A</span><span>Ulasan<small>Play Store, App Store, Maps</small></span></a>
+    <a href="#peta-b"><span class="letter">B</span><span>Media sosial<small>IG, X, Threads, YouTube</small></span></a>
+    <a href="#peta-c"><span class="letter">C</span><span>Berita<small>10 portal</small></span></a>
+    <a href="#peta-d"><span class="letter">D</span><span>Deret waktu<small>Saham, pangan, cuaca</small></span></a>
+    <a href="#peta-f"><span class="letter">F</span><span>Geospasial<small>Gempa, titik api, bencana</small></span></a>
+    <a href="#peta-e"><span class="letter">E</span><span>Panel negara<small>World Bank, IMF, OECD</small></span></a>
+    <a href="#peta-g"><span class="letter">G</span><span>Bibliometrik<small>Scholar, SINTA</small></span></a>
+    <a href="#peta-lintas"><span class="letter">↔</span><span>Lintas dataset<small>Gabungan dua sumber</small></span></a>
+  </div>
+
+  <div class="section">
+    <h2>Prinsip</h2>
+    <div class="principles">
+      <div class="principle"><b>Dua tingkat</b><span>Tingkat ringan (scikit-learn, kamus, NMF) selalu tersedia. Tingkat model (transformer, BERTopic) opsional lewat <code>requirements-analysis.txt</code>, dan bobot model baru diunduh setelah kamu setuju.</span></div>
+      <div class="principle"><b>Inferensi berat sebagai pekerjaan</b><span>Sentimen untuk puluhan ribu baris masuk antrean yang sama dengan scraping, bisa dihentikan, dan hasilnya disimpan sebagai dataset baru.</span></div>
+      <div class="principle"><b>Tingkat riset</b><span>Setiap hasil membawa parameter, metrik evaluasi, seed, versi model, dan paragraf metode yang siap ditempel ke skripsi.</span></div>
+      <div class="principle"><b>Batas yang jujur</b><span>Kalau syarat data tidak terpenuhi, analisis tidak dijalankan dan aplikasi menyebut alasannya.</span></div>
+      <div class="principle"><b>Teks sesuai metodenya</b><span>Transformer membaca teks asli yang dinormalisasi ringan. TF-IDF, kamus, dan topik membaca teks bersih.</span></div>
+      <div class="principle"><b>Lisensi</b><span>Bawaannya permisif (MIT/Apache/BSD). Komponen non-komersial diberi label di antarmuka.</span></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Cara jenis data dikenali</h2>
+    <p class="lead">Pertama dari sumber pekerjaan. Dataset Preprocessing dan Sentimen memakai sumber asalnya, dan dataset Gabungan memakai kolom <code>sumber_data</code>. Kalau sumbernya tidak dikenal, dipakai pola kolom. Satu dataset boleh masuk lebih dari satu keluarga.</p>
+    <div class="rules">
+      <div class="rule"><span class="muted">teks + <code>rating</code> 1–5</span><span class="to">A · Ulasan</span></div>
+      <div class="rule"><span class="muted">teks tanpa rating</span><span class="to">B · Medsos / C · Berita</span></div>
+      <div class="rule"><span class="muted"><code>lintang</code> + <code>bujur</code></span><span class="to">F · Geospasial</span></div>
+      <div class="rule"><span class="muted"><code>negara</code> + <code>tahun</code> + <code>nilai</code></span><span class="to">E · Panel negara</span></div>
+      <div class="rule"><span class="muted">tanggal + kolom angka</span><span class="to">D · Deret waktu</span></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Matriks per keluarga</h2>
+
+    <div class="card" id="peta-a">
+      <div class="family-head"><span class="letter">A</span><div><h3>Ulasan berbintang</h3><div class="meta">Play Store · App Store · Google Maps Review — teks opini pendek dengan bintang 1–5 sebagai label gratis, tanggal, versi aplikasi, dan balasan pemilik.</div></div></div>
+      <div class="tablebox"><table>
+        <thead><tr><th>Analisis</th><th>Metode / library</th><th>Syarat</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td>Sentimen model</td><td>RoBERTa Indonesia <code>w11wo/indonesian-roberta-base-sentiment-classifier</code> (MIT, dilatih pada SmSA IndoNLU)</td><td>≥ 1 teks</td><td><span class="chip done">Tersedia</span></td></tr>
+          <tr><td>Sentimen dari bintang</td><td>TF-IDF + regresi logistik; 1–2 negatif, 4–5 positif; uji 80/20 bertingkat, seed 42</td><td>≥ 200 ulasan, ≥ 30 per kelas</td><td><span class="chip done">Tersedia</span></td></tr>
+          <tr><td>Ketidakcocokan bintang dan teks</td><td>bintang tinggi bernada negatif dan sebaliknya; Cohen's kappa</td><td>kolom rating</td><td><span class="chip done">Tersedia</span></td></tr>
+          <tr><td>Sentimen per aspek</td><td>kamus aspek yang bisa diedit (preset Aplikasi dan Tempat); kalimat yang menyebut aspek dinilai model</td><td>≥ 1 aspek</td><td><span class="chip done">Tersedia</span></td></tr>
+          <tr><td>Tren sentimen</td><td>proporsi per bulan dan per versi aplikasi</td><td>tanggal / versi</td><td><span class="chip done">Tersedia</span></td></tr>
+          <tr><td>Kata dan topik</td><td>frekuensi kata, NMF</td><td>≥ 50 teks</td><td><span class="chip base">Sudah ada</span></td></tr>
+        </tbody>
+      </table></div>
+    </div>
+
+    <div class="card" id="peta-b">
+      <div class="family-head"><span class="letter">B</span><div><h3>Teks media sosial</h3><div class="meta">Instagram · X · Threads · YouTube — tanpa label, banyak slang dan emoji, ada struktur balasan dan jumlah suka.</div></div></div>
+      <div class="tablebox"><table>
+        <thead><tr><th>Analisis</th><th>Metode / library</th><th>Syarat</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td>Sentimen</td><td>model yang sama dengan A</td><td>≥ 1 teks</td><td><span class="chip done">Tersedia</span></td></tr>
+          <tr><td>Emosi, toksisitas</td><td>model transformer opsional yang lisensinya sudah dicek</td><td>—</td><td><span class="chip plan">Tahap 2</span></td></tr>
+          <tr><td>Jaringan balasan, akun sentral</td><td>networkx dari <code>parent_id</code> / <code>id_induk</code></td><td>kolom induk</td><td><span class="chip plan">Tahap 2</span></td></tr>
+          <tr><td>Komentar teratas, sentimen × suka, akun aktif</td><td>pandas</td><td>suka / akun</td><td><span class="chip plan">Tahap 2</span></td></tr>
+          <tr><td>Indikasi teks berulang</td><td>kemiripan kosinus TF-IDF (bukan tuduhan bot)</td><td>≥ 50 teks</td><td><span class="chip plan">Tahap 2</span></td></tr>
+        </tbody>
+      </table></div>
+    </div>
+
+    <div class="card" id="peta-c">
+      <div class="family-head"><span class="letter">C</span><div><h3>Berita</h3><div class="meta">10 portal berita Indonesia — artikel panjang, bertanggal, dari beberapa media.</div></div></div>
+      <div class="tablebox"><table>
+        <thead><tr><th>Analisis</th><th>Metode / library</th><th>Syarat</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td>Kata pembeda antarportal</td><td>weighted log-odds ratio dengan prior Dirichlet (Monroe dkk., 2008)</td><td>≥ 2 portal</td><td><span class="chip plan">Tahap 3</span></td></tr>
+          <tr><td>Sentimen per portal</td><td>model yang sama dengan A</td><td>—</td><td><span class="chip done">Tersedia</span></td></tr>
+          <tr><td>Topik dari waktu ke waktu</td><td>BERTopic + <code>paraphrase-multilingual-MiniLM-L12-v2</code>; NMF sebagai tingkat ringan; coherence</td><td>≥ 50 artikel</td><td><span class="chip plan">Tahap 3</span></td></tr>
+          <tr><td>Entitas bernama</td><td>NER IndoBERT opsional, setelah lisensinya dicek</td><td>—</td><td><span class="chip plan">Tahap 3</span></td></tr>
+        </tbody>
+      </table></div>
+    </div>
+
+    <div class="card" id="peta-d">
+      <div class="family-head"><span class="letter">D</span><div><h3>Deret waktu</h3><div class="meta">Saham · Harga Pangan PIHPS · Cuaca Open-Meteo — nilai angka berurutan menurut tanggal.</div></div></div>
+      <div class="tablebox"><table>
+        <thead><tr><th>Analisis</th><th>Metode / library</th><th>Syarat</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td>Forecast</td><td>statsforecast: AutoARIMA, AutoETS, MSTL; backtest, MAPE/MASE dibanding baseline naif</td><td>≥ 2 siklus dan ≥ 30 titik; horizon ≤ 20 %</td><td><span class="chip plan">Tahap 4</span></td></tr>
+          <tr><td>Dekomposisi, stasioneritas</td><td>statsmodels: STL, uji ADF</td><td>≥ 2 siklus</td><td><span class="chip plan">Tahap 4</span></td></tr>
+          <tr><td>Efek Ramadan / Lebaran</td><td>penanda dari <code>holidays</code></td><td>harga pangan harian</td><td><span class="chip plan">Tahap 4</span></td></tr>
+          <tr><td>Saham</td><td>return, GARCH(1,1) dengan <code>arch</code>, MA/RSI/MACD dengan pandas; dibanding random walk</td><td>≥ 250 hari untuk GARCH</td><td><span class="chip plan">Tahap 4</span></td></tr>
+        </tbody>
+      </table></div>
+    </div>
+
+    <div class="card" id="peta-f">
+      <div class="family-head"><span class="letter">F</span><div><h3>Kejadian geospasial</h3><div class="meta">USGS · NASA FIRMS · GDACS &amp; EONET · Google Maps Lokasi — titik kejadian dengan lintang dan bujur.</div></div></div>
+      <div class="tablebox"><table>
+        <thead><tr><th>Analisis</th><th>Metode / library</th><th>Syarat</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td>Peta kepadatan</td><td>pydeck, agregasi heksagon (200 ribu titik tetap ringan)</td><td>koordinat</td><td><span class="chip plan">Tahap 5</span></td></tr>
+          <tr><td>Klaster titik</td><td>HDBSCAN dengan jarak haversine</td><td>≥ 30 titik</td><td><span class="chip plan">Tahap 5</span></td></tr>
+          <tr><td>Agregasi per kabupaten/kota</td><td>point-in-polygon dengan poligon <code>wilayah_idn.json</code> (geoBoundaries)</td><td>titik di Indonesia</td><td><span class="chip plan">Tahap 5</span></td></tr>
+          <tr><td>Gempa</td><td>Gutenberg–Richter, b-value (estimator Aki), sebaran kedalaman</td><td>≥ 50 gempa</td><td><span class="chip plan">Tahap 5</span></td></tr>
+        </tbody>
+      </table></div>
+    </div>
+
+    <div class="card" id="peta-e">
+      <div class="family-head"><span class="letter">E</span><div><h3>Panel negara-tahun</h3><div class="meta">World Bank · IMF · OECD — indikator per negara per tahun. Titik tahunannya sedikit, jadi tidak ada forecast.</div></div></div>
+      <div class="tablebox"><table>
+        <thead><tr><th>Analisis</th><th>Metode / library</th><th>Syarat</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td>Tren, CAGR, perbandingan</td><td>pandas</td><td>≥ 2 tahun</td><td><span class="chip plan">Tahap 6</span></td></tr>
+          <tr><td>Korelasi antarindikator</td><td>Pearson / Spearman</td><td>≥ 2 indikator</td><td><span class="chip plan">Tahap 6</span></td></tr>
+          <tr><td>Klaster negara</td><td>k-means pada indikator terstandardisasi</td><td>≥ 5 negara</td><td><span class="chip plan">Tahap 6</span></td></tr>
+          <tr><td>Regresi panel efek tetap</td><td><code>linearmodels</code></td><td>≥ 2 indikator, ≥ 3 negara</td><td><span class="chip plan">Tahap 6</span></td></tr>
+        </tbody>
+      </table></div>
+    </div>
+
+    <div class="card" id="peta-g">
+      <div class="family-head"><span class="letter">G</span><div><h3>Bibliometrik</h3><div class="meta">Google Scholar · SINTA — penulis, publikasi, dan sitasi.</div></div></div>
+      <div class="tablebox"><table>
+        <thead><tr><th>Analisis</th><th>Metode / library</th><th>Syarat</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td>Jaringan co-author</td><td>networkx dari kolom <code>authors</code> Google Scholar</td><td>≥ 10 publikasi</td><td><span class="chip plan">Tahap 7</span></td></tr>
+          <tr><td>Sitasi per tahun, topik judul</td><td>pandas, NMF</td><td>—</td><td><span class="chip plan">Tahap 7</span></td></tr>
+          <tr><td>h-index dan sitasi per prodi, Scopus vs GS</td><td>pandas</td><td>profil SINTA</td><td><span class="chip plan">Tahap 7</span></td></tr>
+        </tbody>
+      </table></div>
+      <p class="note">Daftar dokumen SINTA hanya sampel 10 dokumen per penulis dan isinya berubah-ubah, jadi analisis tingkat dokumen untuk SINTA tidak ditawarkan.</p>
+    </div>
+
+    <div class="card" id="peta-lintas">
+      <div class="family-head"><span class="letter">↔</span><div><h3>Lintas dataset</h3><div class="meta">Dua dataset diselaraskan per tanggal (dan per wilayah kalau ada).</div></div></div>
+      <p>Korelasi berlag dan uji kausalitas Granger dengan statsmodels. Urutan: harga pangan × cuaca, lalu bencana/gempa × volume berita, lalu saham × sentimen berita.</p>
+      <p class="note">Korelasi tetap bukan sebab akibat; aplikasi selalu menuliskan catatan ini di hasilnya.</p>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Rujukan metode</h2>
+    <ul class="refs">
+      <li>Wilie, B. dkk. (2020). IndoNLU: Benchmark and Resources for Evaluating Indonesian Natural Language Understanding. AACL-IJCNLP.</li>
+      <li>Liu, Y. dkk. (2019). RoBERTa: A Robustly Optimized BERT Pretraining Approach. arXiv:1907.11692.</li>
+      <li>Pedregosa, F. dkk. (2011). Scikit-learn: Machine Learning in Python. JMLR 12.</li>
+      <li>Cohen, J. (1960). A coefficient of agreement for nominal scales. Educational and Psychological Measurement 20(1).</li>
+      <li>Monroe, B. L., Colaresi, M. P., &amp; Quinn, K. M. (2008). Fightin' Words. Political Analysis 16(4).</li>
+      <li>Grootendorst, M. (2022). BERTopic: Neural topic modeling with a class-based TF-IDF procedure. arXiv:2203.05794.</li>
+      <li>Hyndman, R. J., &amp; Athanasopoulos, G. (2021). Forecasting: Principles and Practice (3rd ed.). OTexts.</li>
+      <li>Bollerslev, T. (1986). Generalized autoregressive conditional heteroskedasticity. Journal of Econometrics 31(3).</li>
+      <li>Campello, R., Moulavi, D., &amp; Sander, J. (2013). Density-based clustering based on hierarchical density estimates. PAKDD.</li>
+      <li>Aki, K. (1965). Maximum likelihood estimate of b in the formula log N = a − bM. Bull. Earthquake Research Institute 43.</li>
+      <li>Granger, C. W. J. (1969). Investigating causal relations by econometric models and cross-spectral methods. Econometrica 37(3).</li>
+    </ul>
+  </div>
+</div>

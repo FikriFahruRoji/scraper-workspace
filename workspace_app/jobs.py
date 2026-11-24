@@ -44,8 +44,11 @@ SUBJECT_KEYS = ("keyword", "symbol", "url_input", "post_input", "query", "app_id
 KNOWN = tuple(sources.LABELS)
 PREPROCESSING = "preprocessing"
 MERGED = "gabungan"
+SENTIMENT = "sentimen"
 # Merged datasets behave like scraped ones for input purposes (preprocessing, analysis).
 INPUTS = (*KNOWN, MERGED)
+# Datasets made from other datasets; they keep their rows as saved (internal columns included).
+DERIVED = (PREPROCESSING, MERGED, SENTIMENT)
 
 
 def _marks(values):
@@ -315,6 +318,37 @@ class JobManager:
         params = {**params, "tandai": tag_source, "buang_duplikat": drop_duplicates}
         return self.start(MERGED, params, project=project, work=work)
 
+    def start_sentiment(self, params, rows, columns, options, *, project, classifier=None):
+        """Rate the sentiment of `rows` in the background and save the rows plus sentiment columns as a job.
+
+        The model is loaded (and downloaded when `params["unduh_model"]` is set) inside the job, so the page
+        never waits for it. Tests pass `classifier` instead.
+        """
+        if not clean_project(project):
+            raise ValueError("Isi nama proyek terlebih dahulu.")
+        if not columns:
+            raise ValueError("Pilih minimal satu kolom teks.")
+        from workspace_app import sentiment
+
+        def work(stop, log, checkpoint):
+            model = classifier
+            if model is None:
+                path = sentiment.model_path(self.directory)
+                if path is None:
+                    if not params.get("unduh_model"):
+                        return [], None, "Model belum diunduh. Setujui unduhan model di halaman Sentimen."
+                    log(f"Mengunduh model {sentiment.MODEL_ID} (sekitar {sentiment.MODEL_SIZE_MB} MB)…")
+                    path = sentiment.model_path(self.directory, download=True)
+                log("Memuat model…")
+                model = sentiment.Classifier(path)
+                log(f"Model siap di perangkat {model.device}.")
+            log(f"Menilai {_fmt(len(rows))} baris dari kolom {', '.join(columns)}.")
+            output, metadata = sentiment.run(rows, columns, options, model, stop=stop, log=log,
+                                             checkpoint=checkpoint)
+            return output, metadata, None
+
+        return self.start(SENTIMENT, params, project=project, work=work)
+
     def input_rows(self, job_ids, limit=None):
         """Rows of the given jobs, newest job first, tagged with `pekerjaan_asal`.
 
@@ -348,7 +382,7 @@ class JobManager:
                     ORDER BY field.key""", list(job_ids))]
 
     def _run(self, job_id, work):
-        strip_internal = self._active["source"] not in (PREPROCESSING, MERGED)
+        strip_internal = self._active["source"] not in DERIVED
         last_saved = float("-inf")
         last_rows = None
         row_count = 0

@@ -79,7 +79,7 @@ def live(manager):
         else:
             st.caption("Menyiapkan proses… log pertama akan muncul sebentar lagi.")
         stop_button(manager, active["stopping"])
-        if active["source"] == "preprocessing":
+        if active["source"] in ("preprocessing", "sentimen"):
             st.caption("Data yang sudah selesai diproses tetap disimpan bila proses dihentikan.")
 
 
@@ -108,5 +108,7 @@ def finished(manager):
                 st.caption("Belum ada log tersimpan.")
         if job["source"] == "preprocessing":
             st.page_link(ui.PAGES["pp-dataset"], label="Buka Dataset Preprocessing", icon=":material/filter_alt:")
+        elif job["source"] == "sentimen" and "sentimen" in ui.PAGES:
+            st.page_link(ui.PAGES["sentimen"], label="Lihat hasil sentimen", icon=":material/sentiment_satisfied:")
         else:
             st.page_link(ui.PAGES["dataset"], label="Buka Dataset", icon=":material/folder:")

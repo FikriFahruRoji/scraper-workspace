@@ -36,12 +36,16 @@ CATALOG = {
              "Ambil riwayat gempa Indonesia atau seluruh dunia dari katalog USGS: magnitudo, kedalaman, lokasi, dan potensi tsunami"),
     "firms": (":material/local_fire_department:", "Lingkungan",
               "Ambil titik api (hotspot) satelit NASA per negara dan tahun: lokasi, waktu, daya radiasi api, dan tingkat keyakinan"),
+    "bencana": (":material/flood:", "Lingkungan",
+                "Ambil kejadian banjir, siklon, gunung api, kekeringan, kebakaran hutan, dan longsor dari GDACS dan NASA EONET"),
     "openmeteo": (":material/partly_cloudy_day:", "Lingkungan",
                   "Ambil cuaca harian atau per jam (suhu, hujan, angin) untuk lokasi mana pun, riwayat atau prakiraan"),
     "sinta": (":material/badge:", "Akademik",
               "Ambil penulis per afiliasi, profil dan metrik penulis, atau contoh dokumen dari SINTA"),
     "pangan": (":material/shopping_basket:", "Ekonomi",
                "Ambil harga harian beras, cabai, bawang, daging, telur, minyak goreng, dan gula per provinsi dari Bank Indonesia"),
+    "oecd": (":material/bar_chart:", "Ekonomi",
+             "Ambil dataset OECD (inflasi, PDB, pajak, kesehatan, dan dataflow lain) per negara dan tahun lewat API SDMX"),
     "imf": (":material/account_balance:", "Ekonomi",
             "Ambil data ekonomi makro IMF (World Economic Outlook) beserta proyeksinya per negara"),
 }
@@ -126,7 +130,7 @@ def source_row(key, name, description, usage):
 # --------------------------------------------------------------------------- #
 
 def all_jobs(manager):
-    jobs = [job for kind in (None, "preprocessing", "gabungan", *ARCHIVE_LABELS)
+    jobs = [job for kind in (None, "preprocessing", "gabungan", "sentimen", *ARCHIVE_LABELS)
             for job in manager.list_jobs(kind, limit=100_000)]
     return sorted(jobs, key=lambda job: job["started"] or "", reverse=True)
 
@@ -134,7 +138,7 @@ def all_jobs(manager):
 def datasets(manager, only=None, prefix="ds"):
     """The dataset list. `only` limits it to one kind of job (e.g. "preprocessing") and hides the source filter."""
     jobs = [job for job in all_jobs(manager) if only is None or job["source"] == only]
-    sources_ = {**LABELS, **ARCHIVE_LABELS, "preprocessing": "Preprocessing", "gabungan": "Gabungan"}
+    sources_ = {**LABELS, **ARCHIVE_LABELS, "preprocessing": "Preprocessing", "gabungan": "Gabungan", "sentimen": "Sentimen"}
     with st.container(key="panel-dataset-filter"):
         cols = st.columns([2, 1.4, 1.4] if not only else [2, 1.4], vertical_alignment="bottom")
         query = cols[0].text_input("Cari", placeholder="Cari nama proyek atau ID…", icon=":material/search:",
@@ -202,9 +206,10 @@ def job_row(manager, job):
     with st.container(key=f"jobrow-{job['id']}"):
         cols = st.columns(ROW, vertical_alignment="center")
         with cols[0]:
-            if job["source"] in ("preprocessing", "gabungan") and job["status"] == "completed":
-                pill = (":primary-badge[:material/filter_alt: Preprocessed]" if job["source"] == "preprocessing"
-                        else ":primary-badge[:material/merge: Gabungan]")
+            if job["source"] in ("preprocessing", "gabungan", "sentimen") and job["status"] == "completed":
+                pill = {"preprocessing": ":primary-badge[:material/filter_alt: Preprocessed]",
+                        "gabungan": ":primary-badge[:material/merge: Gabungan]",
+                        "sentimen": ":primary-badge[:material/sentiment_satisfied: Sentimen]"}[job["source"]]
             else:
                 pill = ui.status_markdown(job["status"])
             st.markdown(f"**{label(job['source'])}**  \n{pill}")
@@ -247,6 +252,9 @@ def job_dialog(manager, job_id):
         preprocessing_details(job)
     elif job["source"] == "gabungan":
         merge_details(job)
+    elif job["source"] == "sentimen":
+        from workspace_app.sentiment_view import sentiment_details
+        sentiment_details(job)
     elif job["source"] in ARCHIVE_LABELS:
         st.caption("Arsip dari versi sebelumnya. Parameter dan metadata tersimpan tersedia di bawah.")
     elif can_rerun:
@@ -315,7 +323,7 @@ def manage_history(manager, only=None, prefix="ds"):
         what = "hasil preprocessing" if only else "pekerjaan yang sudah berakhir, termasuk hasil preprocessing"
         confirm = st.checkbox(f"Saya ingin menghapus seluruh {what}.", key=f"{prefix}-confirm")
         if st.button("Hapus seluruh riwayat", disabled=not confirm, key=f"{prefix}-delete-all"):
-            manager.delete(sources_=[only] if only else [*LABELS, *ARCHIVE_LABELS, "preprocessing", "gabungan"])
+            manager.delete(sources_=[only] if only else [*LABELS, *ARCHIVE_LABELS, "preprocessing", "gabungan", "sentimen"])
             st.rerun()
 
 
