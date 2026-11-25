@@ -1,6 +1,6 @@
 """Shared look and feel: page header cards, badges, number formatting and CSS.
 
-The layout follows a studio-style workspace: a light page, white rounded cards
+The layout follows a studio-style workspace: a dimmed light page, soft off-white rounded cards
 with thin grey borders, a purple accent, option cards for choices and a
 catalogue of sources that leads to one form per source.
 """
@@ -69,10 +69,10 @@ FRIENDLY_ERRORS = {
     "stagnan": "Tidak ada data baru dalam beberapa percobaan, pengambilan dihentikan.",
 }
 
-LIGHT_TOKENS = """--bg: #EEF1F4; --surface: #F8FAFB; --raised: #FFFFFF; --ink: #101820; --muted: #4B5663;
-  --line: #D5DCE4; --accent: #0E7490; --accent-ink: #F4FBFD; --accent-soft: rgba(14, 116, 144, .09);
+LIGHT_TOKENS = """--bg: #D9DEE3; --surface: #E3E7EB; --raised: #E9ECEF; --ink: #101820; --muted: #434D59;
+  --line: #C2CAD3; --accent: #0E7490; --accent-ink: #F4FBFD; --accent-soft: rgba(14, 116, 144, .09);
   --danger: #B3261E; --danger-soft: rgba(179, 38, 30, .08); --danger-line: rgba(179, 38, 30, .35);
-  --warn: #8F4A0B; --shadow: 0 10px 24px -14px rgba(16, 24, 32, .28); --sidebar: #F8FAFB;"""
+  --warn: #8F4A0B; --shadow: 0 10px 24px -14px rgba(16, 24, 32, .28); --sidebar: #E3E7EB;"""
 # Streamlit remembers a theme chosen earlier (System/Dark) per page in localStorage and would show it over the
 # config theme. The app is light only, so such entries are removed and the page reloads once. Static code.
 CLEAR_THEME_SCRIPT = """

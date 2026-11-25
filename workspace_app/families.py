@@ -38,6 +38,7 @@ LON_COLUMNS = ("bujur", "longitude", "lon", "lng")
 SENTIMENT_SOURCE = "sentimen"
 EMOTION_SOURCE = "emosi"
 TOPIC_SOURCE = "bertopic"
+ENTITY_SOURCE = "ner"
 
 
 @dataclass
@@ -67,7 +68,7 @@ def origin_sources(job):
     if source == "preprocessing":
         origin = (params.get("masukan") or {}).get("sumber")
         return [origin] if origin else []
-    if source in (SENTIMENT_SOURCE, EMOTION_SOURCE, TOPIC_SOURCE):
+    if source in (SENTIMENT_SOURCE, EMOTION_SOURCE, TOPIC_SOURCE, ENTITY_SOURCE):
         return list(params.get("sumber_asal") or [])
     return []
 
@@ -227,6 +228,9 @@ CATALOGUE = {
         ("bertopic", "Topik dari waktu ke waktu (BERTopic)",
          "Topik dari makna kalimat (embedding multibahasa, UMAP, HDBSCAN) dengan koherensi NPMI; NMF sebagai "
          "tingkat ringan.", "topik-waktu", 3, lambda i: _need_text(i, 50)),
+        ("entitas", "Entitas bernama",
+         "Orang, organisasi, partai, dan tempat yang paling sering diberitakan, per portal, dari waktu ke waktu, "
+         "dan yang sering disebut bersama (NusaBert-ner, NERGrit).", "entitas", 3, lambda i: _need_text(i)),
         ("topik", "Topik berita (NMF)", "Tingkat ringan untuk topik.", "topik", 0, lambda i: _need_text(i, 50)),
         ("tren", "Volume berita", "Kapan isu paling banyak diberitakan.", "tren", 0,
          lambda i: _need(i.date_columns, "Tidak ada kolom tanggal.")),

@@ -55,7 +55,7 @@ CATALOG = {
 CATEGORIES = ["Media Sosial", "Berita", "Maps & Review", "Keuangan", "Akademik", "Ekonomi", "Lingkungan"]
 PAGE_SIZE = 8
 # Jobs whose rows are the output of an analysis. They are listed on Hasil Analisis.
-ANALYSIS_KINDS = ("sentimen", "emosi", "bertopic")
+ANALYSIS_KINDS = ("sentimen", "emosi", "bertopic", "ner")
 EMPTY = {
     "preprocessing": ("Belum ada hasil preprocessing untuk pilihan ini. Jalankan dulu di Preprocessing Data.",
                       "preprocessing", "Buka Preprocessing Data", ":material/filter_alt:"),
@@ -143,7 +143,7 @@ def source_row(key, name, description, usage):
 # --------------------------------------------------------------------------- #
 
 def all_jobs(manager):
-    jobs = [job for kind in (None, "preprocessing", "gabungan", "sentimen", "emosi", "bertopic", *ARCHIVE_LABELS)
+    jobs = [job for kind in (None, "preprocessing", "gabungan", "sentimen", "emosi", "bertopic", "ner", *ARCHIVE_LABELS)
             for job in manager.list_jobs(kind, limit=100_000)]
     return sorted(jobs, key=lambda job: job["started"] or "", reverse=True)
 
@@ -154,7 +154,7 @@ def datasets(manager, only=None, prefix="ds"):
     kinds = (only,) if isinstance(only, str) else only
     jobs = [job for job in all_jobs(manager) if kinds is None or job["source"] in kinds]
     sources_ = {**LABELS, **ARCHIVE_LABELS, "preprocessing": "Preprocessing", "gabungan": "Gabungan", "sentimen": "Sentimen", "emosi": "Emosi & Toksisitas",
-                "bertopic": "Topik (BERTopic)"}
+                "bertopic": "Topik (BERTopic)", "ner": "Entitas Bernama"}
     with st.container(key="panel-dataset-filter"):
         cols = st.columns([2, 1.4, 1.4, 1.2] if not only else [2, 1.4, 1.2], vertical_alignment="bottom")
         query = cols[0].text_input(tr("Cari"), placeholder=tr("Cari nama proyek atau ID…"), icon=":material/search:",
@@ -472,6 +472,9 @@ def method_tab(manager, job):
     elif source == "bertopic":
         from workspace_app.topics_view import topic_details
         topic_details(job)
+    elif source == "ner":
+        from workspace_app.ner_view import ner_details
+        ner_details(job)
     else:
         from workspace_app.preprocess_view import settings_table
         st.caption(tr("Arsip dari versi sebelumnya. Parameter dan metadata tersimpan tersedia di bawah."))
@@ -538,7 +541,7 @@ def manage_history(manager, only=None, prefix="ds"):
     with st.expander(tr("Kelola riwayat")):
         what = HISTORY[only] if only else "pekerjaan yang sudah berakhir, termasuk hasil preprocessing"
         sources_ = ([only] if isinstance(only, str) else list(only)) if only else [
-            *LABELS, *ARCHIVE_LABELS, "preprocessing", "gabungan", "sentimen", "emosi", "bertopic"]
+            *LABELS, *ARCHIVE_LABELS, "preprocessing", "gabungan", "sentimen", "emosi", "bertopic", "ner"]
         if st.button(tr("Hapus seluruh riwayat"), icon=":material/delete:", key=f"{prefix}-delete-all"):
             confirm_delete_all(manager, what, sources_)
 

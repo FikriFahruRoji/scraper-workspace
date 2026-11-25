@@ -29,7 +29,8 @@ def activity(manager, framed=True):
             count = ui.fmt(manager.saved_count(active["id"]))
             verb = {"preprocessing": "preprocessing berjalan", "sentimen": "analisis sentimen berjalan",
                      "emosi": "analisis emosi berjalan",
-                     "bertopic": "analisis topik berjalan"}.get(
+                     "bertopic": "analisis topik berjalan",
+                     "ner": "analisis entitas berjalan"}.get(
                 active["source"], "mengambil data")
             info.info(tr('{0} · {1} · {2} baris tersimpan', title, tr(verb), count), icon="spinner")
         if controls.button(tr("Hentikan"), key=f"workspace-stop-{'top' if framed else 'form'}",

@@ -47,10 +47,11 @@ MERGED = "gabungan"
 SENTIMENT = "sentimen"
 EMOTION = "emosi"
 BERTOPIC = "bertopic"
+NER = "ner"
 # Merged datasets behave like scraped ones for input purposes (preprocessing, analysis).
 INPUTS = (*KNOWN, MERGED)
 # Datasets made from other datasets; they keep their rows as saved (internal columns included).
-DERIVED = (PREPROCESSING, MERGED, SENTIMENT, EMOTION, BERTOPIC)
+DERIVED = (PREPROCESSING, MERGED, SENTIMENT, EMOTION, BERTOPIC, NER)
 
 
 def _marks(values):
@@ -415,6 +416,37 @@ class JobManager:
             return output, metadata, None
 
         return self.start(BERTOPIC, params, project=project, work=work)
+
+    def start_ner(self, params, rows, columns, *, project, tagger=None):
+        """Tag named entities in `rows` in the background and save the rows plus entity columns as a job.
+
+        The model is loaded (and downloaded when `params["unduh_model"]` is set) inside the job. Tests pass
+        `tagger` instead."""
+        if not clean_project(project):
+            raise ValueError("Isi nama proyek terlebih dahulu.")
+        if not columns:
+            raise ValueError("Pilih minimal satu kolom teks.")
+        from workspace_app import ner
+
+        def work(stop, log, checkpoint):
+            model = tagger
+            if model is None:
+                path = ner.model_path(self.directory)
+                if path is None:
+                    if not params.get("unduh_model"):
+                        return [], None, "Model belum diunduh. Setujui unduhan model di halaman Entitas Bernama."
+                    log(f"Mengunduh model {ner.MODEL_ID} (sekitar {ner.MODEL_SIZE_MB} MB)…")
+                    path = ner.model_path(self.directory, download=True)
+                if stop.is_set():
+                    return [], None, None
+                log("Memuat model NER…")
+                model = ner.Tagger(path)
+                log(f"Model siap di perangkat {model.device}.")
+            log(f"Mengenali entitas pada {_fmt(len(rows))} baris dari kolom {', '.join(columns)}.")
+            output, metadata = ner.run(rows, columns, model, stop=stop, log=log, checkpoint=checkpoint)
+            return output, metadata, None
+
+        return self.start(NER, params, project=project, work=work)
 
     def input_rows(self, job_ids, limit=None):
         """Rows of the given jobs, newest job first, tagged with `pekerjaan_asal`.

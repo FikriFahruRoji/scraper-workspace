@@ -19,6 +19,7 @@ from workspace_app.recommend_view import recommend_page
 from workspace_app.sentiment_view import sentiment_page
 from workspace_app.emotion_view import emotion_page
 from workspace_app.topics_view import topics_page
+from workspace_app.ner_view import ner_page
 from workspace_app.series_view import series_page
 from workspace_app.geo_view import geo_page
 from workspace_app.panel_view import panel_page
@@ -76,6 +77,8 @@ emotion = st.Page(partial(emotion_page, manager), title=tr("Emosi & Toksisitas")
                   url_path="analisis-emosi")
 topics = st.Page(partial(topics_page, manager), title=tr("Topik dari Waktu ke Waktu"), icon=":material/timeline:",
                  url_path="analisis-topik-waktu")
+entities = st.Page(partial(ner_page, manager), title=tr("Entitas Bernama"), icon=":material/person_search:",
+                   url_path="analisis-entitas")
 series = st.Page(partial(series_page, manager), title=tr("Deret Waktu"), icon=":material/show_chart:",
                  url_path="analisis-deret-waktu")
 geomap = st.Page(partial(geo_page, manager), title=tr("Peta Kejadian"), icon=":material/public:",
@@ -94,7 +97,7 @@ ui.pages().update(forms, dataset=dataset, **{"dataset-detail": detail}, scraping
                 berjalan=running)
 ui.pages()["pp-dataset"] = pp_dataset
 ui.pages().update({f"analisis-{key}": page for key, page in analyses.items()}, rekomendasi=recommend, sentimen=sentiment,
-                emosi=emotion, **{"topik-waktu": topics, "deret-waktu": series, "geospasial": geomap, "panel-negara": panel_pg, "bibliometrik": bib_pg, "lintas": cross_pg}, hasil=results)
+                emosi=emotion, entitas=entities, **{"topik-waktu": topics, "deret-waktu": series, "geospasial": geomap, "panel-negara": panel_pg, "bibliometrik": bib_pg, "lintas": cross_pg}, hasil=results)
 
 with st.sidebar:
     with st.container(key="sidebar-bottom"):
@@ -106,7 +109,7 @@ with st.sidebar:
 page = st.navigation({tr("Pengumpulan"): [scraping, dataset, detail, *forms.values()],
                       tr("Persiapan"): [merge, preprocessing, pp_dataset],
                       tr("Eksplorasi"): [analyses[key] for key in EXPLORATION],
-                      tr("Analisis"): [recommend, sentiment, emotion, topics, series, geomap, panel_pg, bib_pg, cross_pg,
+                      tr("Analisis"): [recommend, sentiment, emotion, topics, entities, series, geomap, panel_pg, bib_pg, cross_pg,
                                        *(page for key, page in analyses.items() if key not in EXPLORATION), results],
                       tr("Lainnya"): [running, info]}, expanded=True)
 # Source forms show the running job under their own start button; other pages show it at the top.

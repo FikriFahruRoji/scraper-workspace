@@ -10,7 +10,7 @@ from workspace_app import ui
 from workspace_app.sources import label
 
 # Result page of a job kind when its key in ui.pages() differs from the job source.
-PAGE_OF = {"bertopic": "topik-waktu"}
+PAGE_OF = {"bertopic": "topik-waktu", "ner": "entitas"}
 
 PROGRESS_RE = re.compile(r"^([\d.]+) dari ([\d.]+) baris")
 
@@ -84,7 +84,7 @@ def live(manager):
         else:
             st.caption(tr("Menyiapkan proses… log pertama akan muncul sebentar lagi."))
         stop_button(manager, active["stopping"])
-        if active["source"] in ("preprocessing", "sentimen", "emosi", "bertopic"):
+        if active["source"] in ("preprocessing", "sentimen", "emosi", "bertopic", "ner"):
             st.caption(tr("Data yang sudah selesai diproses tetap disimpan bila proses dihentikan."))
 
 
@@ -112,12 +112,14 @@ def finished(manager):
                 st.caption(tr("Belum ada log tersimpan."))
         if job["source"] == "preprocessing":
             st.page_link(ui.pages()["pp-dataset"], label=tr("Buka Dataset Preprocessing"), icon=":material/filter_alt:")
-        elif job["source"] in ("sentimen", "emosi", "bertopic") and ui.pages().get(PAGE_OF.get(job["source"], job["source"])):
+        elif job["source"] in ("sentimen", "emosi", "bertopic", "ner") and ui.pages().get(PAGE_OF.get(job["source"], job["source"])):
             if job["source"] == "sentimen":
                 st.page_link(ui.pages()["sentimen"], label=tr("Lihat hasil sentimen"),
                              icon=":material/sentiment_satisfied:")
             elif job["source"] == "emosi":
                 st.page_link(ui.pages()["emosi"], label=tr("Lihat hasil emosi dan toksisitas"), icon=":material/mood:")
+            elif job["source"] == "ner":
+                st.page_link(ui.pages()["entitas"], label=tr("Lihat hasil entitas bernama"), icon=":material/person_search:")
             else:
                 st.page_link(ui.pages()["topik-waktu"], label=tr("Lihat hasil topik"), icon=":material/timeline:")
             if "hasil" in ui.pages():

@@ -10,7 +10,7 @@ gatherUsageStats = false
 toolbarMode = "minimal"
 
 # Palette "nocturnal": cool slate neutrals tinted toward the accent hue (about 205),
-# one cyan accent, separate semantic colors. Light only.
+# one cyan accent, separate semantic colors. Light only, dimmed: no pure-white surfaces.
 # The same values live in workspace_app/ui.py as CSS variables (LIGHT_TOKENS).
 [theme]
 base = "light"
@@ -23,10 +23,10 @@ baseRadius = "0.75rem"
 showWidgetBorder = true
 chartCategoricalColors = ["#2B93AE", "#D98B3A", "#6E8F5A", "#B5547A", "#7A86C9", "#C7B04A", "#5F6B78", "#3FA796"]
 primaryColor = "#0E7490"
-backgroundColor = "#EEF1F4"
-secondaryBackgroundColor = "#F8FAFB"
+backgroundColor = "#D9DEE3"
+secondaryBackgroundColor = "#E6EAEE"
 textColor = "#101820"
-borderColor = "#D5DCE4"
+borderColor = "#C2CAD3"
 linkColor = "#0E7490"
 greenColor = "#1A7F4B"
 redColor = "#C0392B"
@@ -35,8 +35,8 @@ yellowColor = "#8A6D00"
 blueColor = "#1D6FA5"
 violetColor = "#6D5BC0"
 grayColor = "#4B5663"
-dataframeHeaderBackgroundColor = "#E6EBF0"
+dataframeHeaderBackgroundColor = "#D3D9DF"
 
 [theme.sidebar]
-backgroundColor = "#F8FAFB"
-secondaryBackgroundColor = "#EEF1F4"
+backgroundColor = "#E3E7EB"
+secondaryBackgroundColor = "#D9DEE3"
