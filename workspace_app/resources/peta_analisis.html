@@ -106,16 +106,16 @@
       <li class="done"><a href="#peta-c"><span class="key">C</span><span class="name">Berita</span><span class="when">Tersedia</span></a></li>
       <li class="done"><a href="#peta-d"><span class="key">D</span><span class="name">Deret waktu</span><span class="when">Tersedia</span></a></li>
       <li class="done"><a href="#peta-f"><span class="key">F</span><span class="name">Geospasial</span><span class="when">Tersedia</span></a></li>
-      <li><a href="#peta-e"><span class="key">E</span><span class="name">Panel negara</span><span class="when">Tahap 6</span></a></li>
-      <li><a href="#peta-g"><span class="key">G</span><span class="name">Bibliometrik</span><span class="when">Tahap 7</span></a></li>
-      <li><a href="#peta-lintas"><span class="key">+</span><span class="name">Lintas dataset</span><span class="when">Setelah G</span></a></li>
+      <li class="done"><a href="#peta-e"><span class="key">E</span><span class="name">Panel negara</span><span class="when">Tersedia</span></a></li>
+      <li class="done"><a href="#peta-g"><span class="key">G</span><span class="name">Bibliometrik</span><span class="when">Tersedia</span></a></li>
+      <li class="done"><a href="#peta-lintas"><span class="key">+</span><span class="name">Lintas dataset</span><span class="when">Tersedia</span></a></li>
     </ol>
   </nav>
 
   <div class="main">
     <div>
       <p class="lede">Dua puluh sumber data dikelompokkan menjadi tujuh keluarga menurut karakteristiknya. Tiap keluarga punya analisis, library gratis, dan syarat data sendiri.</p>
-      <p>Semuanya berjalan di laptop kamu, tanpa token dan tanpa LLM. Yang sudah bisa dipakai sekarang: Rekomendasi Analisis, keluarga A (Ulasan), B (Media sosial), C (Berita), D (Deret waktu), dan F (Geospasial). Keluarga lain menyusul sesuai urutan di samping.</p>
+      <p>Semuanya berjalan di laptop kamu, tanpa token dan tanpa LLM. Seluruh tahap sudah tersedia: Rekomendasi Analisis, keluarga A (Ulasan), B (Media sosial), C (Berita), D (Deret waktu), E (Panel negara), F (Geospasial), G (Bibliometrik), serta analisis Lintas dataset.</p>
     </div>
 
     <section>
@@ -188,7 +188,7 @@
             <tr><td>Kata pembeda antarportal</td><td>weighted log-odds ratio dengan prior Dirichlet informatif (Monroe dkk., 2008), tiap portal melawan sisanya, z-score</td><td>≥ 2 portal, ≥ 5 dokumen per portal</td><td><span class="on">Tersedia</span></td></tr>
             <tr><td>Sentimen per portal</td><td>model yang sama dengan A; sebaran per portal dan uji chi-kuadrat dengan V Cramér</td><td></td><td><span class="on">Tersedia</span></td></tr>
             <tr><td>Topik dari waktu ke waktu</td><td>BERTopic + <code>paraphrase-multilingual-MiniLM-L12-v2</code> (Apache-2.0); NMF sebagai tingkat ringan; koherensi NPMI ditampilkan</td><td>≥ 50 artikel</td><td><span class="on">Tersedia</span></td></tr>
-            <tr><td>Entitas bernama</td><td>NER IndoBERT opsional, setelah lisensinya dicek</td><td></td><td><span class="later">Menunggu cek lisensi</span></td></tr>
+            <tr><td>Entitas bernama</td><td><code>cahya/NusaBert-ner-v1.3</code> (MIT) yang dilatih pada NERGrit (19 label; data tanpa lisensi yang jelas); entitas teratas, per portal, dari waktu ke waktu, dan yang disebut bersama (Jaccard)</td><td>≥ 1 teks</td><td><span class="on">Tersedia</span></td></tr>
           </tbody>
         </table>
       </div>
@@ -223,35 +223,35 @@
       </div>
 
       <div class="family" id="peta-e">
-        <div class="family-head"><span class="key">E</span><h3>Panel negara-tahun</h3><span class="tally">Tahap 6</span>
+        <div class="family-head"><span class="key">E</span><h3>Panel negara-tahun</h3><span class="tally">4 analisis</span>
           <p class="sources">World Bank, IMF, OECD. Indikator per negara per tahun. Titik tahunannya sedikit, jadi tidak ada forecast.</p></div>
         <table class="matrix">
           <thead><tr><th>Analisis</th><th>Metode / library</th><th>Syarat</th><th>Status</th></tr></thead>
           <tbody>
-            <tr><td>Tren, CAGR, perbandingan</td><td>pandas</td><td>≥ 2 tahun</td><td><span class="later">Tahap 6</span></td></tr>
-            <tr><td>Korelasi antarindikator</td><td>Pearson / Spearman</td><td>≥ 2 indikator</td><td><span class="later">Tahap 6</span></td></tr>
-            <tr><td>Klaster negara</td><td>k-means pada indikator terstandardisasi</td><td>≥ 5 negara</td><td><span class="later">Tahap 6</span></td></tr>
-            <tr><td>Regresi panel efek tetap</td><td><code>linearmodels</code></td><td>≥ 2 indikator, ≥ 3 negara</td><td><span class="later">Tahap 6</span></td></tr>
+            <tr><td>Tren, CAGR, perbandingan</td><td>pandas</td><td>≥ 2 tahun</td><td><span class="on">Tersedia</span></td></tr>
+            <tr><td>Korelasi antarindikator</td><td>Pearson / Spearman</td><td>≥ 2 indikator</td><td><span class="on">Tersedia</span></td></tr>
+            <tr><td>Klaster negara</td><td>k-means pada indikator terstandardisasi</td><td>≥ 5 negara</td><td><span class="on">Tersedia</span></td></tr>
+            <tr><td>Regresi panel efek tetap</td><td><code>linearmodels</code></td><td>≥ 2 indikator, ≥ 3 negara</td><td><span class="on">Tersedia</span></td></tr>
           </tbody>
         </table>
       </div>
 
       <div class="family" id="peta-g">
-        <div class="family-head"><span class="key">G</span><h3>Bibliometrik</h3><span class="tally">Tahap 7</span>
+        <div class="family-head"><span class="key">G</span><h3>Bibliometrik</h3><span class="tally">3 analisis</span>
           <p class="sources">Google Scholar, SINTA. Penulis, publikasi, dan sitasi.</p></div>
         <table class="matrix">
           <thead><tr><th>Analisis</th><th>Metode / library</th><th>Syarat</th><th>Status</th></tr></thead>
           <tbody>
-            <tr><td>Jaringan co-author</td><td>networkx dari kolom <code>authors</code> Google Scholar</td><td>≥ 10 publikasi</td><td><span class="later">Tahap 7</span></td></tr>
-            <tr><td>Sitasi per tahun, topik judul</td><td>pandas, NMF</td><td></td><td><span class="later">Tahap 7</span></td></tr>
-            <tr><td>h-index dan sitasi per prodi, Scopus vs GS</td><td>pandas</td><td>profil SINTA</td><td><span class="later">Tahap 7</span></td></tr>
+            <tr><td>Jaringan co-author</td><td>networkx dari kolom <code>authors</code> Google Scholar</td><td>≥ 10 publikasi</td><td><span class="on">Tersedia</span></td></tr>
+            <tr><td>Sitasi per tahun, topik judul</td><td>pandas, NMF</td><td></td><td><span class="on">Tersedia</span></td></tr>
+            <tr><td>h-index dan sitasi per prodi, Scopus vs GS</td><td>pandas</td><td>profil SINTA</td><td><span class="on">Tersedia</span></td></tr>
           </tbody>
         </table>
         <p class="note"><b>Catatan:</b> daftar dokumen SINTA hanya sampel 10 dokumen per penulis dan isinya berubah-ubah, jadi analisis tingkat dokumen untuk SINTA tidak ditawarkan.</p>
       </div>
 
       <div class="family" id="peta-lintas">
-        <div class="family-head"><span class="key">+</span><h3>Lintas dataset</h3><span class="tally">Setelah G</span>
+        <div class="family-head"><span class="key">+</span><h3>Lintas dataset</h3><span class="tally">Tersedia</span>
           <p class="sources">Dua dataset diselaraskan per tanggal (dan per wilayah kalau ada).</p></div>
         <p style="max-width: 72ch">Korelasi berlag dan uji kausalitas Granger dengan statsmodels. Urutan: harga pangan × cuaca, lalu bencana/gempa × volume berita, lalu saham × sentimen berita.</p>
         <p class="note"><b>Catatan:</b> korelasi tetap bukan sebab akibat; aplikasi selalu menuliskan catatan ini di hasilnya.</p>

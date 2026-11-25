@@ -105,15 +105,15 @@
 <li class="done"><a href="#peta-c"><span class="key">C</span><span class="name">News</span><span class="when">Available</span></a></li>
 <li class="done"><a href="#peta-d"><span class="key">D</span><span class="name">Time series</span><span class="when">Available</span></a></li>
 <li class="done"><a href="#peta-f"><span class="key">F</span><span class="name">Geospatial</span><span class="when">Available</span></a></li>
-<li><a href="#peta-e"><span class="key">E</span><span class="name">Country panels</span><span class="when">Stage 6</span></a></li>
-<li><a href="#peta-g"><span class="key">G</span><span class="name">Bibliometrics</span><span class="when">Stage 7</span></a></li>
-<li><a href="#peta-lintas"><span class="key">+</span><span class="name">Across datasets</span><span class="when">After G</span></a></li>
+<li class="done"><a href="#peta-e"><span class="key">E</span><span class="name">Country panels</span><span class="when">Available</span></a></li>
+<li class="done"><a href="#peta-g"><span class="key">G</span><span class="name">Bibliometrics</span><span class="when">Available</span></a></li>
+<li class="done"><a href="#peta-lintas"><span class="key">+</span><span class="name">Across datasets</span><span class="when">Available</span></a></li>
 </ol>
 </nav>
 <div class="main">
 <div>
 <p class="lede">The 20 data sources fall into seven groups. Each group has its own methods, open libraries, and data requirements.</p>
-<p>Analysis runs on your laptop without API tokens or an LLM. Recommended Analyses and groups A (reviews), B (social media), C (news), D (time series), and F (geospatial) are available now. The index shows the remaining stages.</p>
+<p>Analysis runs on your laptop without API tokens or an LLM. All stages are available now: Recommended Analyses, groups A (reviews), B (social media), C (news), D (time series), E (country panels), F (geospatial), G (bibliometrics), and Across datasets.</p>
 </div>
 <section>
 <h2>Design principles</h2>
@@ -180,7 +180,7 @@
 <tr><td>Words that distinguish outlets</td><td>weighted log-odds ratio with an informative Dirichlet prior (Monroe et al., 2008), each outlet against the rest, z-score</td><td>≥ 2 outlets, ≥ 5 documents each</td><td><span class="on">Available</span></td></tr>
 <tr><td>Sentiment by outlet</td><td>same model as group A; distribution per outlet and a chi-square test with Cramér's V</td><td></td><td><span class="on">Available</span></td></tr>
 <tr><td>Topics over time</td><td>BERTopic + <code>paraphrase-multilingual-MiniLM-L12-v2</code> (Apache-2.0). Lightweight option: NMF. NPMI topic coherence is shown</td><td>≥ 50 articles</td><td><span class="on">Available</span></td></tr>
-<tr><td>Named entities</td><td>optional IndoBERT NER following license review</td><td></td><td><span class="later">Pending license review</span></td></tr>
+<tr><td>Named entities</td><td><code>cahya/NusaBert-ner-v1.3</code> (MIT) trained on NERGrit (19 labels; the data has no clear license); top entities, per outlet, over time, and which are named together (Jaccard)</td><td>≥ 1 text</td><td><span class="on">Available</span></td></tr>
 </tbody>
 </table>
 </div>
@@ -212,33 +212,33 @@
 </table>
 </div>
 <div class="family" id="peta-e">
-<div class="family-head"><span class="key">E</span><h3>Country–year panels</h3><span class="tally">Stage 6</span>
+<div class="family-head"><span class="key">E</span><h3>Country–year panels</h3><span class="tally">4 analyses</span>
 <p class="sources">World Bank, IMF, and OECD indicators by country and year. The series contain too few annual observations for forecasting.</p></div>
 <table class="matrix">
 <thead><tr><th>Analysis</th><th>Method / library</th><th>Requirements</th><th>Status</th></tr></thead>
 <tbody>
-<tr><td>Trends, CAGR, and comparisons</td><td>pandas</td><td>≥ 2 years</td><td><span class="later">Stage 6</span></td></tr>
-<tr><td>Correlation between indicators</td><td>Pearson / Spearman</td><td>≥ 2 indicators</td><td><span class="later">Stage 6</span></td></tr>
-<tr><td>Country clusters</td><td>k-means on standardized indicators</td><td>≥ 5 countries</td><td><span class="later">Stage 6</span></td></tr>
-<tr><td>Fixed-effects panel regression</td><td><code>linearmodels</code></td><td>≥ 2 indicators, ≥ 3 countries</td><td><span class="later">Stage 6</span></td></tr>
+<tr><td>Trends, CAGR, and comparisons</td><td>pandas</td><td>≥ 2 years</td><td><span class="on">Available</span></td></tr>
+<tr><td>Correlation between indicators</td><td>Pearson / Spearman</td><td>≥ 2 indicators</td><td><span class="on">Available</span></td></tr>
+<tr><td>Country clusters</td><td>k-means on standardized indicators</td><td>≥ 5 countries</td><td><span class="on">Available</span></td></tr>
+<tr><td>Fixed-effects panel regression</td><td><code>linearmodels</code></td><td>≥ 2 indicators, ≥ 3 countries</td><td><span class="on">Available</span></td></tr>
 </tbody>
 </table>
 </div>
 <div class="family" id="peta-g">
-<div class="family-head"><span class="key">G</span><h3>Bibliometrics</h3><span class="tally">Stage 7</span>
+<div class="family-head"><span class="key">G</span><h3>Bibliometrics</h3><span class="tally">3 analyses</span>
 <p class="sources">Google Scholar and SINTA authors, publications, and citations.</p></div>
 <table class="matrix">
 <thead><tr><th>Analysis</th><th>Method / library</th><th>Requirements</th><th>Status</th></tr></thead>
 <tbody>
-<tr><td>Coauthor network</td><td>NetworkX using the <code>authors</code> Google Scholar</td><td>≥ 10 publications</td><td><span class="later">Stage 7</span></td></tr>
-<tr><td>Citations per year and topics in titles</td><td>pandas, NMF</td><td></td><td><span class="later">Stage 7</span></td></tr>
-<tr><td>h-index and citations by study program, Scopus vs. Google Scholar</td><td>pandas</td><td>SINTA profiles</td><td><span class="later">Stage 7</span></td></tr>
+<tr><td>Coauthor network</td><td>NetworkX using the <code>authors</code> Google Scholar</td><td>≥ 10 publications</td><td><span class="on">Available</span></td></tr>
+<tr><td>Citations per year and topics in titles</td><td>pandas, NMF</td><td></td><td><span class="on">Available</span></td></tr>
+<tr><td>h-index and citations by study program, Scopus vs. Google Scholar</td><td>pandas</td><td>SINTA profiles</td><td><span class="on">Available</span></td></tr>
 </tbody>
 </table>
 <p class="note"><b>Note:</b> SINTA returns a changing sample of 10 documents per author. Document-level analysis requires a more complete list.</p>
 </div>
 <div class="family" id="peta-lintas">
-<div class="family-head"><span class="key">+</span><h3>Across datasets</h3><span class="tally">After G</span>
+<div class="family-head"><span class="key">+</span><h3>Across datasets</h3><span class="tally">Available</span>
 <p class="sources">Two datasets aligned by date and, where available, by region.</p></div>
 <p style="max-width: 72ch">Lagged correlations and Granger causality tests with statsmodels. Planned comparisons cover food prices and weather, disasters or earthquakes and news volume, then stock prices and news sentiment.</p>
 <p class="note"><b>Note:</b> correlation alone cannot establish causation. Results include this qualification.</p>
