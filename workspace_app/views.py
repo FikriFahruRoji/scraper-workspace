@@ -681,7 +681,9 @@ def data_summary(job, rows):
         if {"lintang", "bujur"}.issubset(frame):
             points = frame.dropna(subset=["lintang", "bujur"])
             if not points.empty:
-                st.map(points, latitude="lintang", longitude="bujur")
+                from workspace_app import map_ui
+                map_ui.point_map(points, "lintang", "bujur", key_prefix=f"gm-map-{job['id']}",
+                                 color=(43, 147, 174, 200))
         if not frame.empty:
             stats = st.columns(3)
             stats[0].metric(tr("Tempat"), ui.fmt(len(frame)))

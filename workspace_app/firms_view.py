@@ -142,7 +142,8 @@ def chart(frame, source="firms"):
         st.bar_chart(months.dt.to_period("M").value_counts().sort_index().rename_axis("bulan").rename("titik api"))
     points = frame.dropna(subset=["lintang", "bujur"])
     shown = points.sample(MAP_POINTS, random_state=0) if len(points) > MAP_POINTS else points
-    st.map(shown.rename(columns={"lintang": "latitude", "bujur": "longitude"}), latitude="latitude",
-           longitude="longitude", size=300)
+    from workspace_app import map_ui
+    map_ui.point_map(shown, "lintang", "bujur", key_prefix="firms-map",
+                     weight_col="frp_mw" if "frp_mw" in shown else None, color=(227, 80, 30, 190))
     if len(points) > MAP_POINTS:
         st.caption(f"Peta menampilkan contoh acak {MAP_POINTS:,} titik. Tabel di tab Data memuat semuanya.".replace(",", "."))

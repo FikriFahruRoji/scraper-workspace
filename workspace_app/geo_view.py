@@ -9,6 +9,7 @@ import streamlit as st
 from workspace_app import analysis as an
 from workspace_app import families as fam
 from workspace_app import geo
+from workspace_app import map_ui
 from workspace_app import ui
 from workspace_app.analysis_view import csv_download, load_frame
 from workspace_app.i18n import tr
@@ -124,12 +125,8 @@ def pct(value, places=1):
     return f"{value:.{places}f}%".replace(".", ",")
 
 
-def deck(layers, points):
-    view = pdk.data_utils.compute_view(points[["_lon", "_lat"]].head(20_000).to_numpy().tolist(), view_proportion=0.95)
-    view.pitch = 0
-    st.pydeck_chart(pdk.Deck(layers=layers, initial_view_state=view, map_provider="carto", map_style="light",
-                             tooltip={"html": "{tooltip}", "style": {"fontSize": "12px"}}), height=520)
-    st.caption(tr("Peta dasar dimuat dari internet (CARTO). Tanpa koneksi, hanya lapisan titik yang tampil."))
+def deck(layers, points, style="light"):
+    map_ui.render_deck(layers, points, key_prefix="geo", map_style=style, height=520)
 
 
 def map_points(points, limit=geo.MAX_MAP_POINTS):
@@ -156,12 +153,13 @@ def density_section(context):
     data = pd.DataFrame({"x": shown["_lon"].round(4), "y": shown["_lat"].round(4)})
     if weight:
         data["w"] = pd.to_numeric(shown[weight], errors="coerce").fillna(0)
+    style, _ = map_ui.map_controls(f"{KEY}hex-{context['job_id']}", allow_size=False)
     layer = pdk.Layer(
         "HexagonLayer", data=data, get_position="[x, y]", radius=int(radius * 1000), extruded=False, pickable=True,
         opacity=0.55, auto_highlight=True, coverage=0.95,
         **({"get_color_weight": "w", "color_aggregation": "SUM"} if weight else {}),
         color_range=[[255, 255, 204], [255, 237, 160], [254, 217, 118], [254, 178, 76], [253, 141, 60], [227, 26, 28]])
-    deck([layer], shown)
+    deck([layer], shown, style=style)
     st.caption(tr("Warna makin merah = makin banyak " + ("nilai bobot" if weight else "titik") + " di heksagon itu."))
     method_block(geo.density_method_text(context["report"], context["origin"], radius, weight))
 
@@ -213,15 +211,16 @@ def cluster_section(context):
         b=[PALETTE[label_ % len(PALETTE)][2] if label_ >= 0 else NOISE[2] for label_ in shown["klaster"]],
         a=[200 if label_ >= 0 else 70 for label_ in shown["klaster"]],
         tooltip=[tr("Klaster") + f" {label_}" if label_ >= 0 else tr("Derau") for label_ in shown["klaster"]])
+    style, base_px = map_ui.map_controls(f"{KEY}cl-{context['job_id']}", allow_size=True, default_size=5)
     layer = pdk.Layer("ScatterplotLayer", data=shown[["_lon", "_lat", "r", "g", "b", "a", "tooltip"]],
-                      get_position="[_lon, _lat]", get_fill_color="[r, g, b, a]", get_radius=300, radius_min_pixels=2,
-                      radius_max_pixels=6, pickable=True)
+                      get_position="[_lon, _lat]", get_fill_color="[r, g, b, a]", get_radius=base_px,
+                      radius_units="'pixels'", pickable=True)
     centres = pd.DataFrame({"clon": table["Bujur pusat"], "clat": table["Lintang pusat"], "tooltip": [
         f"{tr('Klaster')} {row.Klaster}: {row.Titik} {tr('titik')}" for row in table.itertuples()]})
     ring = pdk.Layer("ScatterplotLayer", data=centres, get_position="[clon, clat]", stroked=True,
-                     filled=False, get_line_color=[20, 30, 40, 220], line_width_min_pixels=2, get_radius=1000,
-                     radius_min_pixels=8, radius_max_pixels=18, pickable=True)
-    deck([layer, ring], used)
+                     filled=False, get_line_color=[20, 30, 40, 220], line_width_min_pixels=2,
+                     get_radius=base_px + 6, radius_units="'pixels'", pickable=True)
+    deck([layer, ring], used, style=style)
     st.dataframe(table, hide_index=True, width="stretch", column_config={
         "Lintang pusat": st.column_config.NumberColumn(format="%.3f"),
         "Bujur pusat": st.column_config.NumberColumn(format="%.3f"),

@@ -167,6 +167,6 @@ def chart(frame, source="bencana"):
         if table["bulan"].nunique() > 1:
             st.bar_chart(table.pivot_table(index="bulan", columns="jenis", values="id_kejadian", aggfunc="count",
                                            fill_value=0))
-    points = frame.dropna(subset=["lintang", "bujur"]).rename(columns={"lintang": "latitude", "bujur": "longitude"})
-    if len(points):
-        st.map(points, latitude="latitude", longitude="longitude", size=20000)
+    if {"lintang", "bujur"} <= set(frame):
+        from workspace_app import map_ui
+        map_ui.point_map(frame, "lintang", "bujur", key_prefix="dis-map", color=(208, 80, 60, 195))

@@ -1104,5 +1104,10 @@
   "Catatan: korelasi dan uji Granger mengukur kemampuan prediksi berurutan waktu, bukan bukti hubungan sebab akibat.": "Note: correlation and Granger tests measure sequential predictive power, not proof of causation.",
   "Uji kausalitas Granger membutuhkan paket opsional `statsmodels`.": "Granger causality test requires the optional `statsmodels` package.",
   "Lag maksimum Granger": "Maximum Granger lag",
-  "Gunakan selisih pertama (first difference)": "Use first difference"
+  "Gunakan selisih pertama (first difference)": "Use first difference",
+  "Gaya peta": "Map style",
+  "Terang (Light)": "Light",
+  "Gelap (Dark)": "Dark",
+  "Jalan (Voyager)": "Voyager",
+  "Ukuran titik (px)": "Point size (px)"
 }

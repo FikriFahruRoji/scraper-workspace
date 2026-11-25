@@ -235,9 +235,9 @@ def chart(frame, source):
             months = pd.to_datetime(frame["waktu"].str[:7], format="%Y-%m", errors="coerce").dropna()
             if months.nunique() > 1:
                 st.bar_chart(months.dt.to_period("M").value_counts().sort_index().rename_axis("bulan").rename("gempa"))
-        points = frame.rename(columns={"lintang": "latitude", "bujur": "longitude"}).dropna(
-            subset=["latitude", "longitude"]).assign(ukuran=lambda data: data["magnitudo"].fillna(1) ** 2 * 4000)
-        st.map(points, latitude="latitude", longitude="longitude", size="ukuran")
+        from workspace_app import map_ui
+        map_ui.point_map(frame, "lintang", "bujur", key_prefix="nat-map", weight_col="magnitudo",
+                         color=(208, 80, 60, 195))
         st.caption(tr("Lingkaran lebih besar berarti magnitudo lebih besar."))
         return
     axis = next((name for name in ("waktu", "tanggal") if name in frame), None)
