@@ -19,7 +19,8 @@ LABELS = {
 FOLDERS = {key: key for key in LABELS if key != "google_scholar"}
 PROFILES = {"gmaps", "gmaps_places", "instagram", "threads", "x"}
 ARCHIVE_LABELS = {"scholar": "Google Scholar (arsip)", "openalex": "OpenAlex (arsip)", "bmkg": "Gempa BMKG (arsip)"}
-OTHER_LABELS = {**ARCHIVE_LABELS, "preprocessing": "Preprocessing", "gabungan": "Gabungan", "sentimen": "Sentimen", "emosi": "Emosi & Toksisitas"}
+OTHER_LABELS = {**ARCHIVE_LABELS, "preprocessing": "Preprocessing", "gabungan": "Gabungan", "sentimen": "Sentimen", "emosi": "Emosi & Toksisitas",
+                "bertopic": "Topik (BERTopic)"}
 
 
 def label(source):

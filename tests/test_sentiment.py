@@ -187,8 +187,8 @@ def test_recommendations_put_runnable_analyses_first_and_explain_the_rest():
     assert not mismatch.ready and mismatch.blocked == "Tidak ada kolom rating 1–5."
     topics = next(item for item in items if item.key == "topik")
     assert "minimal 50" in topics.blocked
-    planned = [item for _, item in fam.recommendations(["F"], info) if item.page is None]
-    assert planned and planned[0].key == "peta"
+    planned = [item for _, item in fam.recommendations(["E"], info) if item.page is None]
+    assert planned and planned[0].key == "panel"
 
 
 # --------------------------------------------------------------------------- #

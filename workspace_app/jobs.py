@@ -46,10 +46,11 @@ PREPROCESSING = "preprocessing"
 MERGED = "gabungan"
 SENTIMENT = "sentimen"
 EMOTION = "emosi"
+BERTOPIC = "bertopic"
 # Merged datasets behave like scraped ones for input purposes (preprocessing, analysis).
 INPUTS = (*KNOWN, MERGED)
 # Datasets made from other datasets; they keep their rows as saved (internal columns included).
-DERIVED = (PREPROCESSING, MERGED, SENTIMENT, EMOTION)
+DERIVED = (PREPROCESSING, MERGED, SENTIMENT, EMOTION, BERTOPIC)
 
 
 def _marks(values):
@@ -383,6 +384,37 @@ class JobManager:
             return output, metadata, None
 
         return self.start(EMOTION, params, project=project, work=work)
+
+    def start_bertopic(self, params, rows, columns, options, *, project, embedder=None):
+        """Find topics in `rows` with BERTopic in the background and save the rows plus topic columns as a job.
+
+        The embedding model is loaded (and downloaded when `params["unduh_model"]` is set) inside the job.
+        Tests pass `embedder` instead."""
+        if not clean_project(project):
+            raise ValueError("Isi nama proyek terlebih dahulu.")
+        if not columns:
+            raise ValueError("Pilih minimal satu kolom teks.")
+        from workspace_app import bertopic_run
+
+        def work(stop, log, checkpoint):
+            model = embedder
+            if model is None:
+                path = bertopic_run.model_path(self.directory)
+                if path is None:
+                    if not params.get("unduh_model"):
+                        return [], None, "Model belum diunduh. Setujui unduhan model di halaman Topik dari Waktu ke Waktu."
+                    log(f"Mengunduh model {bertopic_run.MODEL_ID} (sekitar {bertopic_run.MODEL_SIZE_MB} MB)…")
+                    path = bertopic_run.model_path(self.directory, download=True)
+                if stop.is_set():
+                    return [], None, None
+                log("Memuat model embedding…")
+                model = bertopic_run.Embedder(path)
+                log(f"Model siap di perangkat {model.device}.")
+            log(f"Menganalisis {_fmt(len(rows))} baris dari kolom {', '.join(columns)}.")
+            output, metadata = bertopic_run.run(rows, columns, options, model, stop=stop, log=log)
+            return output, metadata, None
+
+        return self.start(BERTOPIC, params, project=project, work=work)
 
     def input_rows(self, job_ids, limit=None):
         """Rows of the given jobs, newest job first, tagged with `pekerjaan_asal`.

@@ -103,9 +103,9 @@
     <ol>
       <li class="done"><a href="#peta-a"><span class="key">A</span><span class="name">Ulasan</span><span class="when">Tersedia</span></a></li>
       <li class="done"><a href="#peta-b"><span class="key">B</span><span class="name">Media sosial</span><span class="when">Tersedia</span></a></li>
-      <li><a href="#peta-c"><span class="key">C</span><span class="name">Berita</span><span class="when">Tahap 3</span></a></li>
-      <li><a href="#peta-d"><span class="key">D</span><span class="name">Deret waktu</span><span class="when">Tahap 4</span></a></li>
-      <li><a href="#peta-f"><span class="key">F</span><span class="name">Geospasial</span><span class="when">Tahap 5</span></a></li>
+      <li class="done"><a href="#peta-c"><span class="key">C</span><span class="name">Berita</span><span class="when">Tersedia</span></a></li>
+      <li class="done"><a href="#peta-d"><span class="key">D</span><span class="name">Deret waktu</span><span class="when">Tersedia</span></a></li>
+      <li class="done"><a href="#peta-f"><span class="key">F</span><span class="name">Geospasial</span><span class="when">Tersedia</span></a></li>
       <li><a href="#peta-e"><span class="key">E</span><span class="name">Panel negara</span><span class="when">Tahap 6</span></a></li>
       <li><a href="#peta-g"><span class="key">G</span><span class="name">Bibliometrik</span><span class="when">Tahap 7</span></a></li>
       <li><a href="#peta-lintas"><span class="key">+</span><span class="name">Lintas dataset</span><span class="when">Setelah G</span></a></li>
@@ -115,7 +115,7 @@
   <div class="main">
     <div>
       <p class="lede">Dua puluh sumber data dikelompokkan menjadi tujuh keluarga menurut karakteristiknya. Tiap keluarga punya analisis, library gratis, dan syarat data sendiri.</p>
-      <p>Semuanya berjalan di laptop kamu, tanpa token dan tanpa LLM. Yang sudah bisa dipakai sekarang: Rekomendasi Analisis, keluarga A (Ulasan), dan keluarga B (Media sosial). Keluarga lain menyusul sesuai urutan di samping.</p>
+      <p>Semuanya berjalan di laptop kamu, tanpa token dan tanpa LLM. Yang sudah bisa dipakai sekarang: Rekomendasi Analisis, keluarga A (Ulasan), B (Media sosial), C (Berita), D (Deret waktu), dan F (Geospasial). Keluarga lain menyusul sesuai urutan di samping.</p>
     </div>
 
     <section>
@@ -180,43 +180,44 @@
       </div>
 
       <div class="family" id="peta-c">
-        <div class="family-head"><span class="key">C</span><h3>Berita</h3><span class="tally">1 dari 4 tersedia</span>
+        <div class="family-head"><span class="key">C</span><h3>Berita</h3><span class="tally">3 dari 4 tersedia</span>
           <p class="sources">10 portal berita Indonesia. Artikel panjang, bertanggal, dari beberapa media.</p></div>
         <table class="matrix">
           <thead><tr><th>Analisis</th><th>Metode / library</th><th>Syarat</th><th>Status</th></tr></thead>
           <tbody>
-            <tr><td>Kata pembeda antarportal</td><td>weighted log-odds ratio dengan prior Dirichlet (Monroe dkk., 2008)</td><td>≥ 2 portal</td><td><span class="later">Tahap 3</span></td></tr>
-            <tr><td>Sentimen per portal</td><td>model yang sama dengan A</td><td></td><td><span class="on">Tersedia</span></td></tr>
-            <tr><td>Topik dari waktu ke waktu</td><td>BERTopic + <code>paraphrase-multilingual-MiniLM-L12-v2</code>; NMF sebagai tingkat ringan; coherence</td><td>≥ 50 artikel</td><td><span class="later">Tahap 3</span></td></tr>
-            <tr><td>Entitas bernama</td><td>NER IndoBERT opsional, setelah lisensinya dicek</td><td></td><td><span class="later">Tahap 3</span></td></tr>
+            <tr><td>Kata pembeda antarportal</td><td>weighted log-odds ratio dengan prior Dirichlet informatif (Monroe dkk., 2008), tiap portal melawan sisanya, z-score</td><td>≥ 2 portal, ≥ 5 dokumen per portal</td><td><span class="on">Tersedia</span></td></tr>
+            <tr><td>Sentimen per portal</td><td>model yang sama dengan A; sebaran per portal dan uji chi-kuadrat dengan V Cramér</td><td></td><td><span class="on">Tersedia</span></td></tr>
+            <tr><td>Topik dari waktu ke waktu</td><td>BERTopic + <code>paraphrase-multilingual-MiniLM-L12-v2</code> (Apache-2.0); NMF sebagai tingkat ringan; koherensi NPMI ditampilkan</td><td>≥ 50 artikel</td><td><span class="on">Tersedia</span></td></tr>
+            <tr><td>Entitas bernama</td><td>NER IndoBERT opsional, setelah lisensinya dicek</td><td></td><td><span class="later">Menunggu cek lisensi</span></td></tr>
           </tbody>
         </table>
       </div>
 
       <div class="family" id="peta-d">
-        <div class="family-head"><span class="key">D</span><h3>Deret waktu</h3><span class="tally">Tahap 4</span>
+        <div class="family-head"><span class="key">D</span><h3>Deret waktu</h3><span class="tally">5 dari 5 tersedia</span>
           <p class="sources">Saham, Harga Pangan PIHPS, Cuaca Open-Meteo. Nilai angka berurutan menurut tanggal.</p></div>
         <table class="matrix">
           <thead><tr><th>Analisis</th><th>Metode / library</th><th>Syarat</th><th>Status</th></tr></thead>
           <tbody>
-            <tr><td>Forecast</td><td>statsforecast: AutoARIMA, AutoETS, MSTL; backtest, MAPE/MASE dibanding baseline naif</td><td>≥ 2 siklus dan ≥ 30 titik; horizon ≤ 20 %</td><td><span class="later">Tahap 4</span></td></tr>
-            <tr><td>Dekomposisi, stasioneritas</td><td>statsmodels: STL, uji ADF</td><td>≥ 2 siklus</td><td><span class="later">Tahap 4</span></td></tr>
-            <tr><td>Efek Ramadan / Lebaran</td><td>penanda dari <code>holidays</code></td><td>harga pangan harian</td><td><span class="later">Tahap 4</span></td></tr>
-            <tr><td>Saham</td><td>return, GARCH(1,1) dengan <code>arch</code>, MA/RSI/MACD dengan pandas; dibanding random walk</td><td>≥ 250 hari untuk GARCH</td><td><span class="later">Tahap 4</span></td></tr>
+            <tr><td>Forecast</td><td>statsforecast (Apache-2.0): AutoARIMA, AutoETS, MSTL, naif, naif musiman; uji mundur bergulir 3 jendela, MASE, MAPE, RMSE, cakupan selang 95 %, selalu dibanding baseline naif</td><td>≥ 2 siklus dan ≥ 30 titik; horizon ≤ 20 %</td><td><span class="on">Tersedia</span></td></tr>
+            <tr><td>Dekomposisi, stasioneritas</td><td>statsmodels (BSD): STL robust dengan kekuatan tren dan musiman; uji ADF dan KPSS</td><td>≥ 2 siklus</td><td><span class="on">Tersedia</span></td></tr>
+            <tr><td>Efek Ramadan / Lebaran</td><td>tanggal Idul Fitri dari <code>holidays</code> (MIT); simpangan harga terhadap median bergulir 91 hari per tahun; uji Mann–Whitney</td><td>harga pangan harian, minimal satu Ramadan penuh</td><td><span class="on">Tersedia</span></td></tr>
+            <tr><td>Saham</td><td>return log, volatilitas, drawdown, Jarque–Bera; GARCH(1,1) galat Student-t dengan <code>arch</code> (NCSA); MA/RSI/MACD dengan pandas; forecast dibanding random walk</td><td>≥ 250 hari untuk GARCH</td><td><span class="on">Tersedia</span></td></tr>
+            <tr><td>Cuaca</td><td>anomali terhadap rata-rata hari dalam tahun (≥ 3 tahun, dihaluskan) atau bulan; skor z</td><td>≥ 1 tahun</td><td><span class="on">Tersedia</span></td></tr>
           </tbody>
         </table>
       </div>
 
       <div class="family" id="peta-f">
-        <div class="family-head"><span class="key">F</span><h3>Kejadian geospasial</h3><span class="tally">Tahap 5</span>
+        <div class="family-head"><span class="key">F</span><h3>Kejadian geospasial</h3><span class="tally">4 dari 4 tersedia</span>
           <p class="sources">USGS, NASA FIRMS, GDACS dan EONET, Google Maps Lokasi. Titik kejadian dengan lintang dan bujur.</p></div>
         <table class="matrix">
           <thead><tr><th>Analisis</th><th>Metode / library</th><th>Syarat</th><th>Status</th></tr></thead>
           <tbody>
-            <tr><td>Peta kepadatan</td><td>pydeck, agregasi heksagon (200 ribu titik tetap ringan)</td><td>koordinat</td><td><span class="later">Tahap 5</span></td></tr>
-            <tr><td>Klaster titik</td><td>HDBSCAN dengan jarak haversine</td><td>≥ 30 titik</td><td><span class="later">Tahap 5</span></td></tr>
-            <tr><td>Agregasi per kabupaten/kota</td><td>point-in-polygon dengan poligon <code>wilayah_idn.json</code> (geoBoundaries)</td><td>titik di Indonesia</td><td><span class="later">Tahap 5</span></td></tr>
-            <tr><td>Gempa</td><td>Gutenberg–Richter, b-value (estimator Aki), sebaran kedalaman</td><td>≥ 50 gempa</td><td><span class="later">Tahap 5</span></td></tr>
+            <tr><td>Peta kepadatan</td><td>pydeck (Apache-2.0), agregasi heksagon di peramban (hingga 200 ribu titik), bisa dibobot dengan kolom angka</td><td>koordinat</td><td><span class="on">Tersedia</span></td></tr>
+            <tr><td>Klaster titik</td><td>HDBSCAN (scikit-learn) dengan jarak haversine; pusat dan radius tiap klaster; di atas 15 ribu titik dikelompokkan sampel acak (seed 42)</td><td>≥ 30 titik</td><td><span class="on">Tersedia</span></td></tr>
+            <tr><td>Agregasi per kabupaten/kota</td><td>point-in-polygon (aturan genap-ganjil) dengan poligon <code>wilayah_idn.json</code> (geoBoundaries, CC BY 3.0 IGO), luring; titik di laut diberi kabupaten terdekat ≤ 20 km</td><td>titik di Indonesia</td><td><span class="on">Tersedia</span></td></tr>
+            <tr><td>Gempa</td><td>Gutenberg–Richter; Mc dengan kurvatur maksimum + 0,2; b dengan estimator Aki (koreksi Utsu) dan galat Shi–Bolt; sebaran kedalaman</td><td>≥ 50 gempa</td><td><span class="on">Tersedia</span></td></tr>
           </tbody>
         </table>
       </div>

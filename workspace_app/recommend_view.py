@@ -14,7 +14,7 @@ from workspace_app.sentiment_view import load_meta
 
 def page_link(page_key):
     """The st.Page registered for an analysis page key, if the app registered it."""
-    return ui.pages().get(page_key if page_key in ("sentimen", "emosi") else f"analisis-{page_key}")
+    return ui.pages().get(page_key if page_key in ("sentimen", "emosi", "topik-waktu", "deret-waktu", "geospasial") else f"analisis-{page_key}")
 
 
 def characteristics(info):

@@ -206,6 +206,17 @@ CSS = """
 [class*="st-key-delete-"] button { color: var(--danger); border-color: var(--danger-line); }
 [class*="st-key-delete-"] button:hover { background: var(--danger-soft); border-color: var(--danger); color: var(--danger); }
 
+/* Dataset detail: header card, figures, next steps */
+.st-key-detail-header { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 16px 20px; gap: .6rem; }
+.st-key-detail-title h2 { padding: 0 !important; margin: 0 !important; font-size: 1.35rem !important; }
+.st-key-detail-menu { align-items: flex-end; }
+.st-key-detail-stats { border-top: 1px solid var(--line); padding-top: .75rem; }
+.st-key-detail-stats [data-testid="stMetricLabel"] p { font-size: .78rem; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
+.st-key-detail-stats [data-testid="stMetricValue"] { font-size: 1.25rem; font-variant-numeric: tabular-nums; }
+.st-key-detail-stats [data-testid="stMetricValue"] > div { white-space: normal; overflow: visible; text-overflow: clip; }
+.st-key-detail-next { gap: .6rem; flex-wrap: wrap; }
+[data-testid="stTabs"] { margin-top: .25rem; }
+
 /* Method record: how a dataset was collected */
 dl.method { display: grid; grid-template-columns: minmax(130px, 34%) 1fr; margin: 0; font-size: .9rem;
     border-top: 1px solid var(--line); }

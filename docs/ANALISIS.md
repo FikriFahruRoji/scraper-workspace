@@ -5,8 +5,9 @@ cocok dengan analisis apa, memakai library gratis apa, dan dengan syarat data
 apa. Semua berjalan di komputer pengguna, tanpa token dan tanpa LLM.
 
 Status: **Tahap 1** (hub Rekomendasi Analisis + keluarga A Ulasan) dan
-**Tahap 2** (keluarga B Media sosial) sudah dibangun.
-Keluarga lain menyusul berurutan C → D → F → E → G → Lintas.
+**Tahap 2** (keluarga B Media sosial), **Tahap 3** (keluarga C Berita, kecuali entitas bernama),
+dan **Tahap 4** (keluarga D Deret waktu), dan **Tahap 5** (keluarga F Geospasial) sudah dibangun. Keluarga lain
+menyusul berurutan E → G → Lintas.
 
 ## Prinsip
 
@@ -77,22 +78,35 @@ Kolom akun dikenali dari `username` (Instagram, X, Threads) atau `nama`
 
 ### C. Berita — 10 portal
 
-| Analisis | Metode / library | Syarat |
-|---|---|---|
-| Kata pembeda antarportal | Weighted log-odds ratio dengan prior Dirichlet (Monroe dkk., 2008) | ≥ 2 portal |
-| Sentimen per portal | model yang sama dengan A | — |
-| Topik dari waktu ke waktu | BERTopic (MIT) + `paraphrase-multilingual-MiniLM-L12-v2` (Apache-2.0); NMF sebagai tingkat ringan; coherence ditampilkan | ≥ 50 artikel |
-| Entitas bernama | model NER IndoBERT (opsional, setelah cek lisensi) | — |
+| Analisis | Metode / library | Syarat | Status |
+|---|---|---|---|
+| Kata pembeda antarportal (halaman Kata Pembeda) | Weighted log-odds ratio dengan prior Dirichlet informatif (Monroe dkk., 2008, pers. 22): tiap portal melawan semua portal lain, prior = frekuensi kata seluruh korpus, skor z (\|z\| ≥ 1,96 signifikan); teks dibersihkan tanpa stemming, kata < 5 kemunculan diabaikan | kolom `portal` (atau `sumber_data`) dengan ≥ 2 nilai, ≥ 5 dokumen per kelompok | Tahap 3 |
+| Sentimen per portal (di halaman Sentimen) | model yang sama dengan A; proporsi positif/netral/negatif dan skor bersih per portal, uji chi-kuadrat independensi dengan V Cramér (SciPy) | hasil Sentimen dengan kolom `portal` | Tahap 3 |
+| Topik dari waktu ke waktu, tingkat ringan (halaman Topik dari Waktu ke Waktu) | TF-IDF + NMF (scikit-learn) dari teks bersih; porsi tiap topik per periode; koherensi NPMI (kemunculan bersama 10 kata teratas dalam dokumen; Bouma, 2009) | ≥ 50 artikel disarankan | Tahap 3 |
+| Topik dari waktu ke waktu, tingkat model | BERTopic 0.17 (MIT; Grootendorst, 2022) dengan `paraphrase-multilingual-MiniLM-L12-v2` (Apache-2.0, 256 token, vektor dinormalisasi) → UMAP (5 dimensi, jarak kosinus, seed 42, tata letak lama dikunci agar hasil tetap sama antarversi) → HDBSCAN (ukuran topik minimal bisa diatur, bawaan 15) → c-TF-IDF dari teks bersih (`min_df` 1, karena dipasang pada satu dokumen per topik). Berjalan sebagai pekerjaan antrean; hasilnya dataset turunan `bertopic` dengan kolom `topik_id`, `topik_nama`, `topik_prob`; teks tanpa topik (outlier) dilaporkan terpisah; koherensi NPMI per topik dan rata-rata | ≥ 50 artikel | Tahap 3 |
+| Entitas bernama | model NER IndoBERT (opsional, setelah cek lisensi) | — | menunggu cek lisensi |
+
+Paket tingkat model (BERTopic, UMAP, HDBSCAN, sentence-transformers) ada di
+`requirements-analysis.txt`; bobot embedding (± 480 MB) diunduh setelah pengguna setuju.
 
 ### D. Deret waktu — Saham, Harga Pangan, Cuaca
 
-| Analisis | Metode / library | Syarat |
-|---|---|---|
-| Forecast | statsforecast (Apache-2.0): AutoARIMA, AutoETS, MSTL; backtest pada data terakhir; MAPE/MASE dibanding naif | ≥ 2 siklus musiman dan ≥ 30 titik per seri; horizon ≤ 20 % panjang data |
-| Dekomposisi dan stasioneritas | statsmodels (BSD): STL, uji ADF | ≥ 2 siklus |
-| Efek Ramadan / Lebaran | penanda dari `holidays` (MIT) | harga pangan harian |
-| Saham | return dan sebarannya; volatilitas GARCH(1,1) dengan `arch` (NCSA); MA, RSI, MACD ditulis dengan pandas; forecast selalu dibanding random walk | ≥ 250 hari untuk GARCH |
-| Cuaca | anomali terhadap rata-rata periode | — |
+Semua analisis ada di satu halaman, Deret Waktu. Pengguna memilih dataset, kolom tanggal, kolom nilai (atau
+"jumlah kejadian per periode" untuk gempa, titik api, bencana), saringan satu deret (simbol, komoditas,
+lokasi), periode (harian, hari kerja, mingguan, bulanan, triwulan), dan cara menggabungkan baris dalam satu
+periode. Periode tanpa data diinterpolasi (nol bila menghitung kejadian); bila lebih dari 30 % periode
+terisi, deret ditolak. Hanya 2.500 titik terakhir yang dipakai model.
+
+| Analisis | Metode / library | Syarat | Status |
+|---|---|---|---|
+| Forecast | statsforecast 2.1 (Apache-2.0): naif (random walk), naif musiman, AutoETS, AutoARIMA, MSTL dengan tren ETS; siklus > 24 (mingguan) menjalankan AutoETS/AutoARIMA tanpa musiman. Uji mundur bergulir pada 3 jendela di ujung data (tiap jendela hanya dilatih dari data sebelumnya, minimal 2 siklus data latih); MASE (dibagi galat naif musiman di data latih), MAPE (hanya bila tidak ada nilai nol), RMSE, cakupan selang 95 %; model terbaik menurut MASE dilatih ulang pada seluruh data dengan selang 80 % dan 95 %; selalu dilaporkan apakah ia mengalahkan baseline naif | ≥ 30 titik dan ≥ 2 siklus musiman (harian 7, hari kerja 5, mingguan 52, bulanan 12, triwulan 4); horizon ≤ 20 % panjang data | Tahap 4 |
+| Dekomposisi dan stasioneritas | statsmodels 0.15 (BSD): STL robust; kekuatan tren dan musiman (Wang dkk., 2006); uji ADF (autolag AIC) dan KPSS pada level dan selisih pertama; kesimpulan hanya tegas bila kedua uji sepakat | ≥ 30 titik dan ≥ 2 siklus | Tahap 4 |
+| Efek Ramadan dan Lebaran | tanggal Idul Fitri dari `holidays` (MIT); Ramadan didekati 30 hari sebelum 1 Syawal, pekan Lebaran H-7 sampai H+7; simpangan log harga terhadap median bergulir terpusat 91 hari; tabel per tahun dan uji Mann–Whitney (hari berdekatan berkorelasi sehingga p cenderung terlalu kecil; tabel per tahun yang utama) | deret harian ≥ 120 titik; tahun dihitung hanya bila ada 45 hari data sebelum dan sesudah | Tahap 4 |
+| Saham | return log, volatilitas tahunan (× √252), drawdown maksimum, Jarque–Bera; MA 20/50, RSI 14 (Wilder), MACD (12, 26, 9) ditulis dengan pandas; volatilitas bersyarat GARCH(1,1) galat Student-t dengan `arch` 9 (NCSA) dan prakiraan 10 hari; forecast di bagian Forecast selalu dibanding random walk | harga positif; ≥ 30 return; GARCH ≥ 250 return | Tahap 4 |
+| Cuaca | anomali = nilai − rata-rata hari dalam tahun yang sama (dihaluskan ±7 hari, bila data ≥ 3 tahun) atau rata-rata bulan; skor z; ini rata-rata rentang data yang ada, bukan normal iklim 30 tahun | ≥ 1 tahun | Tahap 4 |
+
+Paket (statsforecast, statsmodels, arch, holidays) ada di `requirements-analysis.txt`. statsforecast
+mensyaratkan pandas < 3, jadi memasangnya menurunkan pandas ke 2.x; seluruh tes lulus di kedua versi.
 
 ### E. Panel negara-tahun — World Bank, IMF, OECD
 
@@ -107,12 +121,18 @@ Titik tahunan sedikit, jadi **tanpa forecast**.
 
 ### F. Kejadian geospasial — USGS, NASA FIRMS, Bencana, Google Maps Lokasi
 
-| Analisis | Metode / library | Syarat |
-|---|---|---|
-| Peta kepadatan | pydeck (Apache-2.0) agregasi heksagon (200 ribu titik tetap ringan) | koordinat |
-| Klaster titik | HDBSCAN (BSD) jarak haversine | ≥ 30 titik |
-| Agregasi per kabupaten/kota | point-in-polygon dengan `scrapers/bencana/wilayah_idn.json` (geoBoundaries, CC BY 3.0 IGO) | titik di Indonesia |
-| Gempa | kurva Gutenberg–Richter dan b-value (estimator Aki), sebaran kedalaman | ≥ 50 gempa |
+Semua analisis ada di satu halaman, Peta Kejadian. Pengguna memilih dataset, menyaring kolom bernilai sedikit
+(jenis, negara, keyakinan) dan memilih bobot opsional (magnitudo, FRP, kecerahan). Baris tanpa koordinat,
+dengan koordinat di luar ±90/±180, atau tepat (0, 0) dibuang dan jumlahnya ditampilkan.
+
+| Analisis | Metode / library | Syarat | Status |
+|---|---|---|---|
+| Peta kepadatan | pydeck (Apache-2.0) `HexagonLayer`, agregasi di peramban (hingga 200 ribu titik, selebihnya sampel acak seed 42 untuk peta saja); jari-jari heksagon bisa diatur; bobot opsional; peta dasar CARTO butuh internet | koordinat | Tahap 5 |
+| Klaster titik | HDBSCAN (scikit-learn; Campello dkk., 2013), jarak haversine pada radian, `excess of mass`, ukuran klaster minimal bisa diatur; pusat (rata-rata vektor satuan di bola) dan radius median/90 % tiap klaster; di atas 15 ribu titik (HDBSCAN: 10 ribu titik 3 detik, 20 ribu 16 detik, 30 ribu 26 detik) dikelompokkan sampel acak seed 42 | ≥ 30 titik | Tahap 5 |
+| Agregasi per kabupaten/kota dan provinsi | point-in-polygon aturan genap-ganjil dengan `scrapers/bencana/wilayah_idn.json` (geoBoundaries IDN ADM2, CC BY 3.0 IGO; provinsi menurut OCHA COD-AB dan pemekaran 2022), luring dan bervektor (numpy); titik di luar semua batas diberi kabupaten terdekat bila ≤ 20 km dari garis batas (jarak dari titik garis batas yang dirapatkan tiap 1 km, akurat ± 1 km; sama dengan aturan scraper Bencana, diuji terhadap `locate` scraper itu); jumlah, jumlah bobot, dan rata-rata per wilayah | titik di Indonesia | Tahap 5 |
+| Gempa | Gutenberg–Richter log₁₀ N(≥M) = a − bM; Mc dengan kurvatur maksimum (Wiemer & Wyss, 2000) + 0,2 (Woessner & Wiemer, 2005), bisa diganti pengguna; b dengan penaksir kemungkinan maksimum Aki (1965) dengan koreksi lebar kelas Utsu, galat baku Shi & Bolt (1982), selang 95 %; b tidak dihitung bila gempa di atas Mc < 50; kelas kedalaman dangkal (< 70 km), menengah (70–300 km), dalam (> 300 km) | ≥ 50 gempa bermagnitudo | Tahap 5 |
+
+Tidak ada paket baru: pydeck ikut Streamlit, HDBSCAN dan KD-tree dari scikit-learn dan SciPy.
 
 ### G. Bibliometrik — Google Scholar, SINTA
 
@@ -139,7 +159,23 @@ saham × sentimen berita.
 - Pedregosa, F. dkk. (2011). Scikit-learn: Machine Learning in Python. JMLR 12.
 - Cohen, J. (1960). A coefficient of agreement for nominal scales. Educational and Psychological Measurement 20(1).
 - Monroe, B. L., Colaresi, M. P., & Quinn, K. M. (2008). Fightin' Words. Political Analysis 16(4).
+- Bouma, G. (2009). Normalized (pointwise) mutual information in collocation extraction. GSCL.
+- Röder, M., Both, A., & Hinneburg, A. (2015). Exploring the space of topic coherence measures. WSDM.
+- McInnes, L., Healy, J., & Melville, J. (2018). UMAP: Uniform Manifold Approximation and Projection for dimension reduction. arXiv:1802.03426.
+- Reimers, N., & Gurevych, I. (2019). Sentence-BERT: Sentence embeddings using Siamese BERT-networks. EMNLP-IJCNLP.
 - Grootendorst, M. (2022). BERTopic: Neural topic modeling with a class-based TF-IDF procedure. arXiv:2203.05794.
+- Garza, A., Mergenthaler-Canseco, M., & Challú, C. (2022). StatsForecast: Lightning fast forecasting with statistical and econometric models. PyCon Salt Lake City.
+- Cleveland, R. B., Cleveland, W. S., McRae, J. E., & Terpenning, I. (1990). STL: A seasonal-trend decomposition procedure based on loess. Journal of Official Statistics 6(1).
+- Wang, X., Smith, K., & Hyndman, R. (2006). Characteristic-based clustering for time series data. Data Mining and Knowledge Discovery 13(3).
+- Dickey, D. A., & Fuller, W. A. (1979). Distribution of the estimators for autoregressive time series with a unit root. JASA 74(366).
+- Kwiatkowski, D., Phillips, P. C. B., Schmidt, P., & Shin, Y. (1992). Testing the null hypothesis of stationarity against the alternative of a unit root. Journal of Econometrics 54.
+- Hyndman, R. J., & Koehler, A. B. (2006). Another look at measures of forecast accuracy. International Journal of Forecasting 22(4).
+- Mann, H. B., & Whitney, D. R. (1947). On a test of whether one of two random variables is stochastically larger than the other. Annals of Mathematical Statistics 18(1).
+- Gutenberg, B., & Richter, C. F. (1944). Frequency of earthquakes in California. Bulletin of the Seismological Society of America 34(4).
+- Utsu, T. (1966). A statistical significance test of the difference in b-value between two earthquake groups. Journal of Physics of the Earth 14(2).
+- Shi, Y., & Bolt, B. A. (1982). The standard error of the magnitude-frequency b value. Bulletin of the Seismological Society of America 72(5).
+- Wiemer, S., & Wyss, M. (2000). Minimum magnitude of completeness in earthquake catalogs. Bulletin of the Seismological Society of America 90(4).
+- Woessner, J., & Wiemer, S. (2005). Assessing the quality of earthquake catalogues: Estimating the magnitude of completeness and its uncertainty. Bulletin of the Seismological Society of America 95(2).
 - Hyndman, R. J., & Athanasopoulos, G. (2021). Forecasting: Principles and Practice (3rd ed.). OTexts.
 - Bollerslev, T. (1986). Generalized autoregressive conditional heteroskedasticity. Journal of Econometrics 31(3).
 - Campello, R., Moulavi, D., & Sander, J. (2013). Density-based clustering based on hierarchical density estimates. PAKDD.

@@ -285,9 +285,8 @@ def show_report(report):
                                for key, value in report.items()]), width="stretch", hide_index=True)
 
 
-def preprocessing_details(job):
-    if not job:
-        return
+def preprocessing_origin(job):
+    """One line saying what the cleaned text came from."""
     params = job["params"]
     origin = params.get("masukan", {})
     if origin.get("jenis") == "berkas":
@@ -295,16 +294,39 @@ def preprocessing_details(job):
     else:
         names = ", ".join(dict.fromkeys(item["proyek"] for item in origin.get("pekerjaan", [])))
         st.caption(tr('Masukan: {0} · {1} pekerjaan ({2}) · kolom {3}', label(origin.get('sumber')), len(origin.get('pekerjaan', [])), names, ', '.join(params.get('kolom', []))))
+
+
+def preprocessing_details(job):
+    if not job:
+        return
+    preprocessing_origin(job)
     if report := job["metadata"].get("laporan"):
         with st.expander(tr("Laporan langkah"), expanded=True):
             show_report(report)
     with st.expander(tr("Konfigurasi")):
-        st.json(params.get("konfigurasi", {}), expanded=False)
+        st.dataframe(settings_table(job["params"].get("konfigurasi", {})), hide_index=True, width="stretch")
+
+
+def settings_table(values, prefix=""):
+    """Nested settings as flat (Pengaturan, Nilai) rows, so people read them as a table and not as JSON."""
+    rows = []
+    for key, value in (values or {}).items():
+        name = f"{prefix}{key}"
+        if isinstance(value, dict):
+            rows += settings_table(value, f"{name} › ").to_dict("records")
+        else:
+            text = ", ".join(map(str, value)) if isinstance(value, (list, tuple)) else value
+            rows.append({tr("Pengaturan"): name, tr("Nilai"): "-" if text in (None, "") else str(text)})
+    return pd.DataFrame(rows, columns=[tr("Pengaturan"), tr("Nilai")])
 
 
 def preprocessing_page(manager):
     ui.page_header(tr("Preprocessing Data"), tr("Bersihkan teks hasil scraping atau berkas kamu sebelum analisis"))
     ensure_defaults()
+    if handoff := st.session_state.pop("pp-handoff", None):  # "Lanjutkan ke Preprocessing" on a dataset page
+        st.session_state[KEY + "input"] = "Riwayat scraping"
+        st.session_state[KEY + "source"] = handoff["source"]
+        st.session_state[f"{KEY}jobs-{handoff['source']}-"] = [handoff["job"]]
     with st.container(key="panel-pp-input"):
         st.header(tr("Data masukan"), anchor=False)
         data = input_section(manager)

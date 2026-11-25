@@ -8,6 +8,7 @@ from dataclasses import dataclass, field
 import pandas as pd
 
 from workspace_app import analysis as an
+from workspace_app import news
 from workspace_app import social as so
 from workspace_app import sources
 
@@ -36,6 +37,7 @@ LAT_COLUMNS = ("lintang", "latitude", "lat")
 LON_COLUMNS = ("bujur", "longitude", "lon", "lng")
 SENTIMENT_SOURCE = "sentimen"
 EMOTION_SOURCE = "emosi"
+TOPIC_SOURCE = "bertopic"
 
 
 @dataclass
@@ -53,6 +55,8 @@ class Profile:
     has_replies: bool = False
     has_author: bool = False
     has_likes: bool = False
+    has_groups: bool = False
+    names: frozenset = frozenset()  # lower-case column names
 
 
 def origin_sources(job):
@@ -63,7 +67,7 @@ def origin_sources(job):
     if source == "preprocessing":
         origin = (params.get("masukan") or {}).get("sumber")
         return [origin] if origin else []
-    if source in (SENTIMENT_SOURCE, EMOTION_SOURCE):
+    if source in (SENTIMENT_SOURCE, EMOTION_SOURCE, TOPIC_SOURCE):
         return list(params.get("sumber_asal") or [])
     return []
 
@@ -114,6 +118,8 @@ def profile(frame):
         has_replies=so.reply_columns(frame)[0] is not None,
         has_author=so.author_column(frame) is not None,
         has_likes=so.like_column(frame) is not None,
+        has_groups=news.group_column(frame) is not None,
+        names=frozenset(lowered),
     )
 
 
@@ -212,18 +218,37 @@ CATALOGUE = {
          lambda i: _need(i.date_columns, "Tidak ada kolom tanggal.")),
     ],
     "C": [
-        ("log-odds", "Kata pembeda antarportal", "Weighted log-odds menunjukkan framing tiap portal.", None, 3,
-         lambda i: ""),
-        ("sentimen", "Sentimen per portal", "Nada pemberitaan tiap portal.", "sentimen", 1, lambda i: _need_text(i)),
-        ("bertopic", "Topik dari waktu ke waktu (BERTopic)", "Topik yang naik dan turun.", None, 3, lambda i: ""),
+        ("log-odds", "Kata pembeda antarportal",
+         "Weighted log-odds (Monroe dkk., 2008): kata yang khas bagi satu portal dibanding portal lain.", "pembeda", 3,
+         lambda i: _need_text(i) or _need(i.has_groups, "Tidak ada kolom portal atau sumber dengan minimal dua nilai.")),
+        ("sentimen", "Sentimen per portal",
+         "Nada pemberitaan tiap portal: sebaran sentimen, skor bersih, dan uji chi-kuadrat.", "sentimen", 1,
+         lambda i: _need_text(i)),
+        ("bertopic", "Topik dari waktu ke waktu (BERTopic)",
+         "Topik dari makna kalimat (embedding multibahasa, UMAP, HDBSCAN) dengan koherensi NPMI; NMF sebagai "
+         "tingkat ringan.", "topik-waktu", 3, lambda i: _need_text(i, 50)),
         ("topik", "Topik berita (NMF)", "Tingkat ringan untuk topik.", "topik", 0, lambda i: _need_text(i, 50)),
         ("tren", "Volume berita", "Kapan isu paling banyak diberitakan.", "tren", 0,
          lambda i: _need(i.date_columns, "Tidak ada kolom tanggal.")),
     ],
     "D": [
-        ("forecast", "Forecast dengan backtest", "AutoARIMA/ETS/MSTL dibanding baseline naif.", None, 4,
+        ("forecast", "Forecast dengan uji mundur",
+         "AutoETS, AutoARIMA, dan MSTL dibanding baseline naif pada data terakhir; MASE, MAPE, dan cakupan selang.",
+         "deret-waktu", 4, lambda i: _need(i.date_columns, "Tidak ada kolom tanggal.")),
+        ("dekomposisi", "Dekomposisi musiman dan uji stasioner",
+         "STL dengan kekuatan tren dan musiman, uji ADF dan KPSS.", "deret-waktu", 4,
          lambda i: _need(i.date_columns, "Tidak ada kolom tanggal.")),
-        ("dekomposisi", "Dekomposisi musiman dan uji stasioner", "STL dan ADF.", None, 4, lambda i: ""),
+        ("ramadan", "Efek Ramadan dan Lebaran",
+         "Simpangan harga di sekitar Idul Fitri dibanding hari lain, per tahun.", "deret-waktu", 4,
+         lambda i: None if "harga" not in i.names else _need(i.date_columns, "Tidak ada kolom tanggal.")),
+        ("saham", "Return, indikator, dan volatilitas GARCH",
+         "Sebaran return, MA, RSI, MACD, dan GARCH(1,1); forecast selalu dibanding random walk.", "deret-waktu", 4,
+         lambda i: None if not ({"close", "adj_close"} & i.names) else _need(i.date_columns,
+                                                                                 "Tidak ada kolom tanggal.")),
+        ("cuaca", "Anomali cuaca",
+         "Selisih suhu atau hujan terhadap rata-rata hari dan bulan yang sama di data ini.", "deret-waktu", 4,
+         lambda i: None if not any(name.startswith(("suhu", "hujan")) for name in i.names)
+         else _need(i.date_columns, "Tidak ada kolom tanggal.")),
         ("statistik", "Statistik kolom angka", "Ringkasan, sebaran, dan kelengkapan.", "statistik", 0, lambda i: ""),
     ],
     "E": [
@@ -232,8 +257,19 @@ CATALOGUE = {
         ("statistik", "Statistik indikator", "Ringkasan dan kelengkapan data.", "statistik", 0, lambda i: ""),
     ],
     "F": [
-        ("peta", "Peta kepadatan dan klaster HDBSCAN", "Titik diringkas per heksagon dan per kabupaten.", None, 5,
+        ("peta", "Peta kepadatan heksagon", "Di mana kejadian menumpuk; bisa dibobot dengan magnitudo atau FRP.",
+         "geospasial", 5, lambda i: _need(i.has_coordinates, "Tidak ada kolom lintang dan bujur.")),
+        ("klaster", "Klaster titik (HDBSCAN)",
+         "Kelompok kejadian yang rapat menurut jarak lingkaran besar, dengan pusat dan radius tiap klaster.",
+         "geospasial", 5, lambda i: _need(i.has_coordinates and i.rows >= 30,
+                                          "Butuh kolom lintang dan bujur dan minimal 30 titik.")),
+        ("wilayah", "Hitungan per kabupaten/kota dan provinsi",
+         "Titik ditempatkan pada batas kabupaten/kota (offline); khusus Indonesia.", "geospasial", 5,
          lambda i: _need(i.has_coordinates, "Tidak ada kolom lintang dan bujur.")),
+        ("gempa", "Gempa: Gutenberg–Richter dan kedalaman",
+         "Nilai b dengan Mc otomatis (Aki, Utsu, Shi–Bolt) dan sebaran kedalaman.", "geospasial", 5,
+         lambda i: None if not ({"magnitudo", "magnitude", "mag"} & i.names)
+         else _need(i.rows >= 50, f"Butuh minimal 50 gempa, dataset ini {i.rows}.")),
         ("tren", "Jumlah kejadian dari waktu ke waktu", "Musim dan lonjakan kejadian.", "tren", 0,
          lambda i: _need(i.date_columns, "Tidak ada kolom tanggal.")),
         ("statistik", "Statistik kejadian", "Sebaran magnitudo, kedalaman, kecerahan.", "statistik", 0, lambda i: ""),
@@ -254,6 +290,9 @@ def recommendations(families, info):
             if key in seen:  # the same analysis suits several families: list it once, under the first
                 continue
             seen.add(key)
-            found.append((family, Recommendation(key, title, why, page, stage, check(info) or "")))
+            reason = check(info)
+            if reason is None:  # does not apply to this dataset at all: not worth listing
+                continue
+            found.append((family, Recommendation(key, title, why, page, stage, reason)))
     order = {True: 0, False: 1}
     return sorted(found, key=lambda item: (order[item[1].ready], item[1].page is None, item[1].stage == 0))

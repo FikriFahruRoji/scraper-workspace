@@ -210,6 +210,9 @@ def show_results(job, frame, metadata, params):
         stars_section(frame, metadata, rating, text_columns, name)
     if sn.aspect_columns(frame):
         aspects_section(frame, name)
+    from workspace_app import news_view
+    news_view.sentiment_group_section(frame, name, ", ".join(label(source) for source in params.get("sumber_asal") or [])
+                                      or "data")
     time_section(frame, name)
 
     st.subheader(tr("Paragraf metode"), anchor=False)

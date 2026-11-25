@@ -20,6 +20,8 @@ PAGES = {
     "balasan": (":material/forum:", "Jaringan Balasan", "Siapa membalas siapa, akun sentral, dan komunitas percakapan"),
     "interaksi": (":material/group:", "Interaksi & Akun", "Teks paling disukai, akun paling aktif, dan sentimen × suka"),
     "berulang": (":material/content_copy:", "Teks Berulang", "Komentar yang sangat mirip satu sama lain"),
+    # Berita (keluarga C); the renderer lives in news_view.
+    "pembeda": (":material/compare_arrows:", "Kata Pembeda", "Kata yang khas bagi satu portal dibanding portal lain"),
 }
 # General tools that suit any dataset sit in the menu's Eksplorasi group; the other pages are analyses for one
 # data family and sit under Analisis.
@@ -60,8 +62,9 @@ def analysis_page(manager, key):
         frame = load_frame(manager, job_id, job["count"])
         renderer = RENDERERS.get(key)
         if renderer is None:
+            from workspace_app.news_view import RENDERERS as NEWS
             from workspace_app.social_view import RENDERERS as SOCIAL
-            renderer = SOCIAL[key]
+            renderer = {**SOCIAL, **NEWS}[key]
         renderer(manager, job, frame)
 
 

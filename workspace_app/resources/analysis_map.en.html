@@ -102,9 +102,9 @@
 <ol>
 <li class="done"><a href="#peta-a"><span class="key">A</span><span class="name">Reviews</span><span class="when">Available</span></a></li>
 <li class="done"><a href="#peta-b"><span class="key">B</span><span class="name">Social media</span><span class="when">Available</span></a></li>
-<li><a href="#peta-c"><span class="key">C</span><span class="name">News</span><span class="when">Stage 3</span></a></li>
-<li><a href="#peta-d"><span class="key">D</span><span class="name">Time series</span><span class="when">Stage 4</span></a></li>
-<li><a href="#peta-f"><span class="key">F</span><span class="name">Geospatial</span><span class="when">Stage 5</span></a></li>
+<li class="done"><a href="#peta-c"><span class="key">C</span><span class="name">News</span><span class="when">Available</span></a></li>
+<li class="done"><a href="#peta-d"><span class="key">D</span><span class="name">Time series</span><span class="when">Available</span></a></li>
+<li class="done"><a href="#peta-f"><span class="key">F</span><span class="name">Geospatial</span><span class="when">Available</span></a></li>
 <li><a href="#peta-e"><span class="key">E</span><span class="name">Country panels</span><span class="when">Stage 6</span></a></li>
 <li><a href="#peta-g"><span class="key">G</span><span class="name">Bibliometrics</span><span class="when">Stage 7</span></a></li>
 <li><a href="#peta-lintas"><span class="key">+</span><span class="name">Across datasets</span><span class="when">After G</span></a></li>
@@ -113,7 +113,7 @@
 <div class="main">
 <div>
 <p class="lede">The 20 data sources fall into seven groups. Each group has its own methods, open libraries, and data requirements.</p>
-<p>Analysis runs on your laptop without API tokens or an LLM. Recommended Analyses, reviews (A), and social media (B) are available now. The index shows the remaining stages.</p>
+<p>Analysis runs on your laptop without API tokens or an LLM. Recommended Analyses and groups A (reviews), B (social media), C (news), D (time series), and F (geospatial) are available now. The index shows the remaining stages.</p>
 </div>
 <section>
 <h2>Design principles</h2>
@@ -172,41 +172,42 @@
 </table>
 </div>
 <div class="family" id="peta-c">
-<div class="family-head"><span class="key">C</span><h3>News</h3><span class="tally">1 of 4 available</span>
+<div class="family-head"><span class="key">C</span><h3>News</h3><span class="tally">3 of 4 available</span>
 <p class="sources">Long, dated articles from 10 Indonesian news outlets.</p></div>
 <table class="matrix">
 <thead><tr><th>Analysis</th><th>Method / library</th><th>Requirements</th><th>Status</th></tr></thead>
 <tbody>
-<tr><td>Words that distinguish outlets</td><td>weighted log-odds ratio with a Dirichlet prior (Monroe et al., 2008)</td><td>≥ 2 outlets</td><td><span class="later">Stage 3</span></td></tr>
-<tr><td>Sentiment by outlet</td><td>same model as group A</td><td></td><td><span class="on">Available</span></td></tr>
-<tr><td>Topics over time</td><td>BERTopic + <code>paraphrase-multilingual-MiniLM-L12-v2</code>. Lightweight option: NMF. Evaluate topic coherence</td><td>≥ 50 articles</td><td><span class="later">Stage 3</span></td></tr>
-<tr><td>Named entities</td><td>optional IndoBERT NER following license review</td><td></td><td><span class="later">Stage 3</span></td></tr>
+<tr><td>Words that distinguish outlets</td><td>weighted log-odds ratio with an informative Dirichlet prior (Monroe et al., 2008), each outlet against the rest, z-score</td><td>≥ 2 outlets, ≥ 5 documents each</td><td><span class="on">Available</span></td></tr>
+<tr><td>Sentiment by outlet</td><td>same model as group A; distribution per outlet and a chi-square test with Cramér's V</td><td></td><td><span class="on">Available</span></td></tr>
+<tr><td>Topics over time</td><td>BERTopic + <code>paraphrase-multilingual-MiniLM-L12-v2</code> (Apache-2.0). Lightweight option: NMF. NPMI topic coherence is shown</td><td>≥ 50 articles</td><td><span class="on">Available</span></td></tr>
+<tr><td>Named entities</td><td>optional IndoBERT NER following license review</td><td></td><td><span class="later">Pending license review</span></td></tr>
 </tbody>
 </table>
 </div>
 <div class="family" id="peta-d">
-<div class="family-head"><span class="key">D</span><h3>Time series</h3><span class="tally">Stage 4</span>
+<div class="family-head"><span class="key">D</span><h3>Time series</h3><span class="tally">5 of 5 available</span>
 <p class="sources">Stock prices, PIHPS food prices, and Open-Meteo weather. Numeric observations ordered by date.</p></div>
 <table class="matrix">
 <thead><tr><th>Analysis</th><th>Method / library</th><th>Requirements</th><th>Status</th></tr></thead>
 <tbody>
-<tr><td>Forecasting</td><td>statsforecast AutoARIMA, AutoETS, and MSTL. Backtest using MAPE/MASE against a naive baseline</td><td>≥ 2 cycles and ≥ 30 points, horizon ≤ 20%</td><td><span class="later">Stage 4</span></td></tr>
-<tr><td>Decomposition and stationarity</td><td>statsmodels STL and the ADF test</td><td>≥ 2 cycles</td><td><span class="later">Stage 4</span></td></tr>
-<tr><td>Ramadan and Eid effects</td><td>calendar flags from <code>holidays</code></td><td>daily food prices</td><td><span class="later">Stage 4</span></td></tr>
-<tr><td>Stocks</td><td>returns and GARCH(1,1) with <code>arch</code>, MA/RSI/MACD with pandas, compared against a random walk</td><td>≥ 250 days for GARCH</td><td><span class="later">Stage 4</span></td></tr>
+<tr><td>Forecasting</td><td>statsforecast (Apache-2.0): AutoARIMA, AutoETS, MSTL, naive, and seasonal naive. Rolling backtest over 3 windows with MASE, MAPE, RMSE, and 95% interval coverage, always against a naive baseline</td><td>≥ 2 cycles and ≥ 30 points, horizon ≤ 20%</td><td><span class="on">Available</span></td></tr>
+<tr><td>Decomposition and stationarity</td><td>statsmodels (BSD): robust STL with trend and seasonal strength; ADF and KPSS tests</td><td>≥ 2 cycles</td><td><span class="on">Available</span></td></tr>
+<tr><td>Ramadan and Eid effects</td><td>Eid dates from <code>holidays</code> (MIT); price deviation from a 91-day rolling median per year; Mann–Whitney test</td><td>daily food prices covering at least one full Ramadan</td><td><span class="on">Available</span></td></tr>
+<tr><td>Stocks</td><td>log returns, volatility, drawdown, Jarque–Bera; GARCH(1,1) with Student-t errors using <code>arch</code> (NCSA); MA/RSI/MACD with pandas; forecasts compared against a random walk</td><td>≥ 250 days for GARCH</td><td><span class="on">Available</span></td></tr>
+<tr><td>Weather</td><td>anomalies against the mean of the same day of year (≥ 3 years, smoothed) or month; z-score</td><td>≥ 1 year</td><td><span class="on">Available</span></td></tr>
 </tbody>
 </table>
 </div>
 <div class="family" id="peta-f">
-<div class="family-head"><span class="key">F</span><h3>Geospatial events</h3><span class="tally">Stage 5</span>
+<div class="family-head"><span class="key">F</span><h3>Geospatial events</h3><span class="tally">4 of 4 available</span>
 <p class="sources">USGS, NASA FIRMS, GDACS, EONET, and Google Maps Places. Event points have latitude and longitude.</p></div>
 <table class="matrix">
 <thead><tr><th>Analysis</th><th>Method / library</th><th>Requirements</th><th>Status</th></tr></thead>
 <tbody>
-<tr><td>Density map</td><td>pydeck hexagon aggregation for up to 200,000 points</td><td>coordinates</td><td><span class="later">Stage 5</span></td></tr>
-<tr><td>Point clusters</td><td>HDBSCAN using haversine distance</td><td>≥ 30 points</td><td><span class="later">Stage 5</span></td></tr>
-<tr><td>Aggregation by district or city</td><td>point-in-polygon using boundaries from <code>wilayah_idn.json</code> (geoBoundaries)</td><td>points in Indonesia</td><td><span class="later">Stage 5</span></td></tr>
-<tr><td>Earthquakes</td><td>Gutenberg–Richter, b-value (Aki estimator), and depth distribution</td><td>≥ 50 earthquakes</td><td><span class="later">Stage 5</span></td></tr>
+<tr><td>Density map</td><td>pydeck (Apache-2.0) hexagon aggregation in the browser for up to 200,000 points, optionally weighted by a numeric column</td><td>coordinates</td><td><span class="on">Available</span></td></tr>
+<tr><td>Point clusters</td><td>HDBSCAN (scikit-learn) using haversine distance; centre and radius per cluster; above 15,000 points a random sample is clustered (seed 42)</td><td>≥ 30 points</td><td><span class="on">Available</span></td></tr>
+<tr><td>Aggregation by district or city</td><td>offline point-in-polygon (even-odd rule) using boundaries from <code>wilayah_idn.json</code> (geoBoundaries, CC BY 3.0 IGO); offshore points take the nearest district within 20 km</td><td>points in Indonesia</td><td><span class="on">Available</span></td></tr>
+<tr><td>Earthquakes</td><td>Gutenberg–Richter; Mc by maximum curvature + 0.2; b by the Aki estimator (Utsu correction) with Shi–Bolt error; depth distribution</td><td>≥ 50 earthquakes</td><td><span class="on">Available</span></td></tr>
 </tbody>
 </table>
 </div>

@@ -404,7 +404,8 @@ def test_preprocessing_dataset_opens_report_and_downloads(tmp_path, monkeypatch)
     assert not at.exception
     assert {b.label for b in at.get("download_button")} >= {"Unduh Excel", "Unduh CSV", "Unduh JSON"}
     assert any("data.csv" in caption.value for caption in at.caption)
-    assert [metric.value for metric in at.metric][:2] == ["1", "1"]
+    # Four figures of the dataset come first (rows, columns, duration, status), then the report's own.
+    assert [metric.value for metric in at.metric][4:6] == ["1", "1"]
 
 
 def test_scraping_catalogue_and_dataset_list_render(tmp_path, monkeypatch):

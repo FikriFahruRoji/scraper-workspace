@@ -9,8 +9,8 @@ from workspace_app.sources import label
 
 
 def finished(manager):
-    """Finished jobs that saved rows (scraped, preprocessed, merged, sentiment, or emotion), newest first."""
-    jobs = [job for kind in (None, "preprocessing", "gabungan", "sentimen", "emosi") for job in manager.list_jobs(kind, limit=100_000)]
+    """Finished jobs that saved rows (scraped, preprocessed, merged, sentiment, emotion, or topics), newest first."""
+    jobs = [job for kind in (None, "preprocessing", "gabungan", "sentimen", "emosi", "bertopic") for job in manager.list_jobs(kind, limit=100_000)]
     jobs = [job for job in jobs if job["status"] not in ACTIVE and job["count"]]
     return sorted(jobs, key=lambda job: job["started"] or "", reverse=True)
 

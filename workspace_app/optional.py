@@ -3,6 +3,9 @@ from importlib.util import find_spec
 
 GROUPS = {
     "transformer": ("torch", "transformers", "huggingface_hub", "safetensors"),
+    "topic": ("torch", "transformers", "huggingface_hub", "safetensors", "sentence_transformers", "bertopic",
+              "umap", "hdbscan"),
+    "timeseries": ("statsforecast", "statsmodels", "arch", "holidays"),
 }
 INSTALL_COMMAND = "pip install -r requirements-analysis.txt"
 

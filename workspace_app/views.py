@@ -627,8 +627,6 @@ def render_result(job, logs=(), compact=False):
                 st.caption(tr("Menampilkan maksimal 300 pesan terakhir."))
         else:
             st.caption(tr("Belum ada log tersimpan untuk pekerjaan ini."))
-    with st.expander(tr("Parameter dan metadata"), icon=":material/data_object:"):
-        st.json({"parameter": job["params"], "metadata": job["metadata"]}, expanded=False)
     if not rows and not (job["source"] == "google_scholar" and job["metadata"]):
         st.info(tr("Menunggu hasil pertama.") if active else tr("Pekerjaan ini tidak menghasilkan data."))
         return
@@ -644,50 +642,78 @@ def render_result(job, logs=(), compact=False):
 
 
 def data_tabs(job, rows):
+    """Table and summary side by side, for the compact result on a source page."""
     if job["source"] == "google_scholar":
         from workspace_app.scholar_view import data_tabs as scholar_tabs
         return scholar_tabs(job)
     if rows:
-        frame = pd.DataFrame(rows).drop(columns=["paragraphs"], errors="ignore")
         result_tab, detail_tab = st.tabs([tr(":material/table_view: Data"), tr(":material/bar_chart: Ringkasan")])
         with result_tab:
-            query = st.text_input(tr("Cari di hasil"), key=f"find-{job['id']}", icon=":material/search:",
-                                  placeholder=tr("Cari di hasil (hanya memfilter tampilan)"), label_visibility="collapsed")
-            if query.strip():
-                mask = frame.fillna("").astype(str).apply(
-                    lambda col: col.str.contains(query.strip(), case=False, regex=False)
-                ).any(axis=1)
-                frame = frame[mask]
-            st.dataframe(frame, width="stretch", hide_index=True)
+            data_table(job, rows)
         with detail_tab:
-            if job["source"] in OPEN_DATA:
-                from workspace_app.open_data_view import chart
-                chart(frame, job["source"])
-            elif job["source"] == "saham" and {"date", "close"}.issubset(frame):
-                st.line_chart(frame.set_index("date")["close"])
-                if events := job["metadata"].get("events"):
-                    st.dataframe(events, hide_index=True)
-            elif job["source"] == "gmaps_places":
-                if {"lintang", "bujur"}.issubset(frame):
-                    points = frame.dropna(subset=["lintang", "bujur"])
-                    if not points.empty:
-                        st.map(points, latitude="lintang", longitude="bujur")
-                if not frame.empty:
-                    stats = st.columns(3)
-                    stats[0].metric(tr("Tempat"), ui.fmt(len(frame)))
-                    if "rating" in frame:
-                        rating = pd.to_numeric(frame["rating"], errors="coerce").mean()
-                        stats[1].metric(tr("Rating rata-rata"), f"{rating:.2f}" if pd.notna(rating) else "-")
-                    if "kategori" in frame:
-                        stats[2].metric(tr("Kategori"), ui.fmt(frame["kategori"].nunique()))
-                    if "kategori" in frame:
-                        st.bar_chart(frame["kategori"].value_counts().head(15))
-            else:
-                group = next((column for column in ("portal", "rating", "media", "username") if column in frame), None)
-                if group and not frame.empty:
-                    st.bar_chart(frame[group].value_counts().head(15))
-                else:
-                    st.metric(tr("Baris"), ui.fmt(len(frame)))
+            data_summary(job, rows)
+
+
+def data_table(job, rows):
+    """Search box and the table of rows."""
+    frame = pd.DataFrame(rows).drop(columns=["paragraphs"], errors="ignore")
+    query = st.text_input(tr("Cari di hasil"), key=f"find-{job['id']}", icon=":material/search:",
+                          placeholder=tr("Cari di hasil (hanya memfilter tampilan)"), label_visibility="collapsed")
+    if query.strip():
+        mask = frame.fillna("").astype(str).apply(
+            lambda col: col.str.contains(query.strip(), case=False, regex=False)
+        ).any(axis=1)
+        frame = frame[mask]
+    st.dataframe(frame, width="stretch", hide_index=True)
+
+
+def data_summary(job, rows):
+    """A chart or a few figures that describe the rows."""
+    frame = pd.DataFrame(rows).drop(columns=["paragraphs"], errors="ignore")
+    if job["source"] in OPEN_DATA:
+        from workspace_app.open_data_view import chart
+        chart(frame, job["source"])
+    elif job["source"] == "saham" and {"date", "close"}.issubset(frame):
+        st.line_chart(frame.set_index("date")["close"])
+        if events := job["metadata"].get("events"):
+            st.dataframe(events, hide_index=True)
+    elif job["source"] == "gmaps_places":
+        if {"lintang", "bujur"}.issubset(frame):
+            points = frame.dropna(subset=["lintang", "bujur"])
+            if not points.empty:
+                st.map(points, latitude="lintang", longitude="bujur")
+        if not frame.empty:
+            stats = st.columns(3)
+            stats[0].metric(tr("Tempat"), ui.fmt(len(frame)))
+            if "rating" in frame:
+                rating = pd.to_numeric(frame["rating"], errors="coerce").mean()
+                stats[1].metric(tr("Rating rata-rata"), f"{rating:.2f}" if pd.notna(rating) else "-")
+            if "kategori" in frame:
+                stats[2].metric(tr("Kategori"), ui.fmt(frame["kategori"].nunique()))
+            if "kategori" in frame:
+                st.bar_chart(frame["kategori"].value_counts().head(15))
+    else:
+        group = next((column for column in ("portal", "rating", "media", "username") if column in frame), None)
+        if group and not frame.empty:
+            st.bar_chart(frame[group].value_counts().head(15))
+        else:
+            breakdowns(frame)
+
+
+def breakdowns(frame):
+    """Without a known grouping column: the few categorical columns, and who appears most often."""
+    shown = 0
+    for column in frame.columns:
+        values = frame[column].dropna().astype(str) if frame[column].dtype == object else None
+        if values is not None and 2 <= values.nunique() <= 20 and shown < 2:
+            st.caption(tr("Sebaran {0}", column))
+            st.bar_chart(values.value_counts())
+            shown += 1
+    if "nama" in frame and frame["nama"].nunique() > 1:
+        st.caption(tr("{0} terbanyak", "nama"))
+        st.bar_chart(frame["nama"].value_counts().head(10), horizontal=True, sort="-count")
+    if not shown and "nama" not in frame:
+        st.metric(tr("Baris"), ui.fmt(len(frame)))
 
 
 def downloads(job, rows):

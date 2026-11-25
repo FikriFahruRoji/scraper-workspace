@@ -1,10 +1,22 @@
 # Tingkat model untuk menu Analisis (opsional). Aplikasi tetap jalan tanpa paket ini;
 # fitur yang membutuhkannya menampilkan perintah instal ini.
 #   pip install -r requirements-analysis.txt
-# Bobot model (sekitar 500 MB untuk sentimen, 500 MB untuk emosi, 440 MB per model toksisitas) diunduh
-# ke folder data aplikasi saat pertama dipakai, setelah kamu setuju di halaman Sentimen atau Emosi & Toksisitas.
+# Bobot model (sekitar 500 MB untuk sentimen, 500 MB untuk emosi, 440 MB per model toksisitas, 480 MB untuk topik BERTopic) diunduh
+# ke folder data aplikasi saat pertama dipakai, setelah kamu setuju di halaman Sentimen, Emosi & Toksisitas, atau Topik.
 -r requirements.txt
 torch>=2.2
 transformers>=4.44
 huggingface_hub>=0.24
 safetensors>=0.4
+# Topik BERTopic (halaman Topik dari Waktu ke Waktu): embedding kalimat, UMAP, HDBSCAN.
+sentence-transformers>=3.0
+bertopic>=0.16
+umap-learn>=0.5
+hdbscan>=0.8.33
+# Deret waktu (halaman Deret Waktu): forecast dengan uji mundur, STL/ADF/KPSS, GARCH, hari raya.
+# statsforecast mensyaratkan pandas < 3, jadi pip menurunkan pandas bila perlu; aplikasi berjalan di keduanya.
+pandas>=2.2,<3
+statsforecast>=2.0
+statsmodels>=0.14.5
+arch>=7.0
+holidays>=0.60
