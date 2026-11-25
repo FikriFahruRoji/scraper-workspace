@@ -106,7 +106,7 @@ $env:STREAMLIT_SERVER_PORT = "8511"
 
 ## Analysis Suite
 
-Scraper Workspace automatically profiles your dataset and recommends suitable analyses in **Rekomendasi Analisis** (see full method specifications in [docs/ANALISIS.md](docs/ANALISIS.md)).
+Scraper Workspace automatically profiles your dataset and recommends suitable analyses in **Rekomendasi Analisis** (all 8 stages **A–G + Cross-Dataset** are available; see full method specifications in [docs/ANALISIS.md](docs/ANALISIS.md)).
 
 | Family | Data Type | Built-in Analyses |
 | --- | --- | --- |
@@ -115,7 +115,7 @@ Scraper Workspace automatically profiles your dataset and recommends suitable an
 | **C · News** | Indonesian News Portals | Distinct portal words (weighted log-odds), sentiment per portal (χ² + Cramér's V), NMF topics & BERTopic over time (UMAP + HDBSCAN + NPMI coherence) |
 | **D · Time Series** | Stocks, Food Prices, Weather | Rolling-origin forecast (AutoETS, AutoARIMA, MSTL vs naive), STL decomposition + ADF/KPSS, Ramadan/Eid effect, stock returns/RSI/MACD/GARCH(1,1), weather anomalies |
 | **E · Country Panel** | World Bank, IMF, OECD | Annual trends & CAGR, Pearson/Spearman indicator correlation, k-means country clustering, fixed-effects panel regression (`PanelOLS`) |
-| **F · Geospatial** | USGS, NASA FIRMS, Disasters, GMaps Places | Hexagon density map (`pydeck`), HDBSCAN spatial clustering, offline Indonesian province/district aggregation, Gutenberg–Richter b-value & depth profile |
+| **F · Geospatial** | USGS, NASA FIRMS, Disasters, GMaps Places | Dynamic `pydeck` maps (Indonesia-first viewport, constant-pixel circles on zoom, Light/Dark/Voyager styles, hover tooltips), hexagon density, HDBSCAN spatial clustering, offline Indonesian province/district aggregation, Gutenberg–Richter b-value & depth profile |
 | **G · Bibliometrics** | Google Scholar, SINTA | Co-author network (NetworkX + Louvain), annual citations & h-index, NMF title topics, SINTA profile distributions (Scopus vs GS) |
 | **Cross-Dataset** | Any two dated datasets | Date/region alignment, cross-correlation across lags, bidirectional Granger causality tests |
 
