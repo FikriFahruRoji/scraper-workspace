@@ -2,6 +2,8 @@
 import pandas as pd
 import streamlit as st
 
+from workspace_app.i18n import tr
+
 from workspace_app import analysis as an
 from workspace_app import families as fam
 from workspace_app import optional
@@ -25,7 +27,7 @@ def load_meta(_manager, job_id, count):
 
 
 def sentiment_page(manager):
-    ui.page_header("Sentimen", "Nada positif, netral, atau negatif dari teks, dibandingkan dengan bintang bila ada")
+    ui.page_header(tr("Sentimen"), tr("Nada positif, netral, atau negatif dari teks, dibandingkan dengan bintang bila ada"))
     jobs = finished(manager)
     if not jobs:
         empty_state()
@@ -35,7 +37,7 @@ def sentiment_page(manager):
     tabs = ["Hasil sentimen", "Jalankan analisis"]
     if not results:
         tabs.reverse()
-    chosen = st.segmented_control("Bagian", tabs, default=tabs[0], key=KEY + "part", label_visibility="collapsed")
+    chosen = st.segmented_control(tr("Bagian"), tabs, format_func=tr, default=tabs[0], key=KEY + "part", label_visibility="collapsed")
     if chosen == "Jalankan analisis":
         run_section(manager, inputs)
     else:
@@ -53,7 +55,7 @@ def run_section(manager, jobs):
     by_id = {job["id"]: job for job in jobs}
     remembered = st.session_state.get("an-last")
     with st.container(key="panel-sn-input"):
-        job_id = st.selectbox("Dataset", list(by_id), format_func=lambda value: option_label(by_id[value]),
+        job_id = st.selectbox(tr("Dataset"), list(by_id), format_func=lambda value: option_label(by_id[value]),
                               index=list(by_id).index(remembered) if remembered in by_id else 0,
                               key=KEY + "dataset")
         st.session_state["an-last"] = job_id
@@ -63,45 +65,44 @@ def run_section(manager, jobs):
         info = fam.profile(frame)
         origins = fam.origin_sources({**job, "params": meta["params"]}) or fam.merged_sources(frame)
         if not info.text_columns:
-            st.info("Dataset ini tidak punya kolom teks.", icon=":material/text_fields:")
+            st.info(tr("Dataset ini tidak punya kolom teks."), icon=":material/text_fields:")
             return
 
         defaults = [column for source in origins for column in pp.TEXT_COLUMNS.get(source, [])
                     if column in info.text_columns]
         defaults = list(dict.fromkeys(defaults)) or [column for column in an.default_text_columns(info.text_columns)
                                                      if column != an.CLEAN_COLUMN][:1] or info.text_columns[:1]
-        columns = st.multiselect("Kolom teks", info.text_columns, default=defaults, key=f"{KEY}columns-{job_id}",
-                                 help="Model membaca teks asli yang dinormalisasi ringan (kata gaul, emoji), "
-                                      "bukan teks_bersih: stemming dan penghapusan stopword merusak konteks.")
+        columns = st.multiselect(tr("Kolom teks"), info.text_columns, default=defaults, key=f"{KEY}columns-{job_id}",
+                                 help=tr("Model membaca teks asli yang dinormalisasi ringan (kata gaul, emoji), "
+                                      "bukan teks_bersih: stemming dan penghapusan stopword merusak konteks."))
         ratings = [None, *[column for column in frame if column != "pekerjaan_asal"]]
-        rating = st.selectbox("Kolom bintang (opsional)", ratings, key=f"{KEY}rating-{job_id}",
+        rating = st.selectbox(tr("Kolom bintang (opsional)"), ratings, key=f"{KEY}rating-{job_id}",
                               index=ratings.index(info.rating_column) if info.rating_column in ratings else 0,
-                              format_func=lambda value: "Tidak ada" if value is None else value,
-                              help="Bintang 1–5. Dipakai untuk classifier pembanding dan tabel ketidakcocokan.")
+                              format_func=lambda value: tr("Tidak ada") if value is None else value,
+                              help=tr("Bintang 1–5. Dipakai untuk classifier pembanding dan tabel ketidakcocokan."))
         star = False
         if rating:
-            star = st.checkbox("Latih classifier pembanding dari bintang", True, key=KEY + "star",
-                               help=f"TF-IDF + regresi logistik, bintang 1–2 negatif dan 4–5 positif. Butuh minimal "
-                                    f"{sn.MIN_STAR_ROWS} ulasan dan {sn.MIN_PER_CLASS} per kelas.")
+            star = st.checkbox(tr("Latih classifier pembanding dari bintang"), True, key=KEY + "star",
+                               help=tr('TF-IDF + regresi logistik, bintang 1–2 negatif dan 4–5 positif. Butuh minimal {0} ulasan dan {1} per kelas.', sn.MIN_STAR_ROWS, sn.MIN_PER_CLASS))
         presets = [NO_ASPECTS, *sn.ASPECT_PRESETS]
         preset_default = next((sn.SOURCE_PRESETS[source] for source in origins if source in sn.SOURCE_PRESETS),
                               NO_ASPECTS)
-        preset = st.segmented_control("Kamus aspek", presets, default=preset_default, required=True,
+        preset = st.segmented_control(tr("Kamus aspek"), presets, format_func=tr, default=preset_default, required=True,
                                       key=f"{KEY}preset-{job_id}")
         aspects = {}
         if preset != NO_ASPECTS:
-            text = st.text_area("Aspek dan kata kuncinya", sn.format_aspects(sn.ASPECT_PRESETS[preset]),
+            text = st.text_area(tr("Aspek dan kata kuncinya"), sn.format_aspects(sn.ASPECT_PRESETS[preset]),
                                 height=180, key=f"{KEY}aspects-{job_id}-{preset}",
-                                help="Satu aspek per baris: nama: kata, kata. Kalimat yang memuat kata kunci "
-                                     "dinilai sentimennya sebagai aspek itu.")
+                                help=tr("Satu aspek per baris: nama: kata, kata. Kalimat yang memuat kata kunci "
+                                     "dinilai sentimennya sebagai aspek itu."))
             aspects = sn.parse_aspects(text)
-            st.caption("Berbasis kata kunci: kalimat yang tidak memakai kata kunci tidak terhitung.")
+            st.caption(tr("Berbasis kata kunci: kalimat yang tidak memakai kata kunci tidak terhitung."))
 
     with st.container(key="panel-sn-run"):
-        st.header("Jalankan", anchor=False)
+        st.header(tr("Jalankan"), anchor=False)
         missing = optional.missing("transformer")
         if missing:
-            st.warning(f"Paket model belum terpasang ({', '.join(missing)}). Jalankan di folder aplikasi:",
+            st.warning(tr('Paket model belum terpasang ({0}). Jalankan di folder aplikasi:', ', '.join(missing)),
                        icon=":material/download:")
             st.code(optional.INSTALL_COMMAND, language="bash")
             return
@@ -109,34 +110,32 @@ def run_section(manager, jobs):
         download = False
         if not cached:
             download = st.checkbox(
-                f"Unduh model {sn.MODEL_ID} (sekitar {sn.MODEL_SIZE_MB} MB, lisensi {sn.MODEL_LICENSE}) ke folder "
-                f"data aplikasi", key=KEY + "download",
-                help="Sekali saja. Setelah itu model dipakai dari komputermu tanpa internet.")
+                tr('Unduh model {0} (sekitar {1} MB, lisensi {2}) ke folder data aplikasi', sn.MODEL_ID, sn.MODEL_SIZE_MB, sn.MODEL_LICENSE), key=KEY + "download",
+                help=tr("Sekali saja. Setelah itu model dipakai dari komputermu tanpa internet."))
         else:
-            st.caption(f"Model {sn.MODEL_ID} (lisensi {sn.MODEL_LICENSE}) sudah ada di komputer ini.")
+            st.caption(tr('Model {0} (lisensi {1}) sudah ada di komputer ini.', sn.MODEL_ID, sn.MODEL_LICENSE))
         project = project_field(manager, "sentimen")
-        st.caption(f"{ui.fmt(job['count'])} baris akan dinilai di latar belakang, satu antrean dengan scraping. "
-                   "Puluhan ribu baris bisa memakan waktu beberapa menit sampai puluhan menit.")
+        st.caption(tr('{0} baris akan dinilai di latar belakang, satu antrean dengan scraping. Puluhan ribu baris bisa memakan waktu beberapa menit sampai puluhan menit.', ui.fmt(job['count'])))
         active, _ = manager.snapshot()
         ready = bool(columns) and bool(project) and active is None and (cached or download)
-        if st.button("Jalankan analisis sentimen", type="primary", icon=":material/play_arrow:", disabled=not ready):
+        if st.button(tr("Jalankan analisis sentimen"), type="primary", icon=":material/play_arrow:", disabled=not ready):
             params = {"masukan": {"pekerjaan": job_id, "proyek": job["project"], "sumber": job["source"]},
                       "sumber_asal": origins, "kolom": columns, "kolom_rating": rating, "classifier_bintang": star,
                       "kamus_aspek": aspects, "unduh_model": download}
             options = {"rating_column": rating, "star": star, "aspects": aspects}
             try:
                 manager.start_sentiment(params, manager.input_rows([job_id]), columns, options, project=project)
-                st.switch_page(ui.PAGES["berjalan"])
+                st.switch_page(ui.pages()["berjalan"])
             except (RuntimeError, ValueError) as exc:
                 st.error(str(exc))
         if active is not None:
-            st.caption("Tunggu pekerjaan yang sedang berjalan selesai atau hentikan dulu.")
+            st.caption(tr("Tunggu pekerjaan yang sedang berjalan selesai atau hentikan dulu."))
         elif not columns:
-            st.caption("Pilih minimal satu kolom teks.")
+            st.caption(tr("Pilih minimal satu kolom teks."))
         elif not project:
-            st.caption("Isi nama proyek untuk mengaktifkan tombol.")
+            st.caption(tr("Isi nama proyek untuk mengaktifkan tombol."))
         elif not (cached or download):
-            st.caption("Setujui unduhan model untuk mengaktifkan tombol.")
+            st.caption(tr("Setujui unduhan model untuk mengaktifkan tombol."))
 
 
 # --------------------------------------------------------------------------- #
@@ -169,11 +168,11 @@ def pct(value):
 
 def results_section(manager, jobs):
     if not jobs:
-        st.info("Belum ada hasil sentimen. Jalankan analisis dulu.", icon=":material/sentiment_satisfied:")
+        st.info(tr("Belum ada hasil sentimen. Jalankan analisis dulu."), icon=":material/sentiment_satisfied:")
         return
     by_id = {job["id"]: job for job in jobs}
     remembered = st.session_state.get("an-last")
-    job_id = st.selectbox("Hasil sentimen", list(by_id), format_func=lambda value: option_label(by_id[value]),
+    job_id = st.selectbox(tr("Hasil sentimen"), list(by_id), format_func=lambda value: option_label(by_id[value]),
                           index=list(by_id).index(remembered) if remembered in by_id else 0, key=KEY + "result")
     st.session_state["an-last"] = job_id
     job = by_id[job_id]
@@ -181,7 +180,7 @@ def results_section(manager, jobs):
     meta = load_meta(manager, job_id, job["count"])
     metadata, params = meta["metadata"], meta["params"]
     if "sentimen" not in frame:
-        st.warning("Dataset ini belum berisi kolom sentimen (pekerjaan mungkin dihentikan sebelum baris pertama).")
+        st.warning(tr("Dataset ini belum berisi kolom sentimen (pekerjaan mungkin dihentikan sebelum baris pertama)."))
         return
     show_results(job, frame, metadata, params)
 
@@ -195,15 +194,14 @@ def show_results(job, frame, metadata, params):
     rated = int(distribution["Jumlah"].sum())
 
     if metadata.get("dihentikan"):
-        st.warning("Pekerjaan dihentikan sebelum selesai: hanya sebagian baris yang dinilai.",
+        st.warning(tr("Pekerjaan dihentikan sebelum selesai: hanya sebagian baris yang dinilai."),
                    icon=":material/pause_circle:")
     cols = st.columns(4)
-    cols[0].metric("Teks dinilai", ui.fmt(rated), border=True)
+    cols[0].metric(tr("Teks dinilai"), ui.fmt(rated), border=True)
     for column, sentiment in zip(cols[1:], sn.SENTIMENTS):
         share = distribution.set_index("Sentimen").loc[sentiment, "Persen"] if rated else 0
         column.metric(sentiment.capitalize(), pct(share), border=True)
-    st.caption(f"Model {metadata.get('model')} · lisensi {metadata.get('lisensi_model')} · "
-               f"perangkat {metadata.get('perangkat') or '-'} · {metadata.get('detik', '-')} detik")
+    st.caption(tr('Model {0} · lisensi {1} · perangkat {2} · {3} detik', metadata.get('model'), metadata.get('lisensi_model'), metadata.get('perangkat') or '-', metadata.get('detik', '-')))
 
     bar(distribution, "Sentimen", "Jumlah")
     csv_download(distribution, f"sentimen-{name}", "dl-sn-dist")
@@ -214,16 +212,16 @@ def show_results(job, frame, metadata, params):
         aspects_section(frame, name)
     time_section(frame, name)
 
-    st.subheader("Paragraf metode", anchor=False)
+    st.subheader(tr("Paragraf metode"), anchor=False)
     origin = ", ".join(label(source) for source in params.get("sumber_asal") or []) or "data"
     st.code(sn.method_text(metadata, f"teks {origin}"), language=None, wrap_lines=True)
 
 
 def stars_section(frame, metadata, rating, text_columns, name):
-    st.subheader("Bintang dan isi teks", anchor=False)
+    st.subheader(tr("Bintang dan isi teks"), anchor=False)
     table = sn.by_rating(frame, rating)
     if not table.empty:
-        st.caption("Persentase sentimen model per bintang. Bintang tinggi dengan banyak teks negatif patut dibaca.")
+        st.caption(tr("Persentase sentimen model per bintang. Bintang tinggi dengan banyak teks negatif patut dibaca."))
         st.dataframe(table, hide_index=True, width="stretch",
                      column_config={label_: st.column_config.ProgressColumn(label_, min_value=0, max_value=100,
                                                                              format="%.1f%%")
@@ -235,43 +233,43 @@ def stars_section(frame, metadata, rating, text_columns, name):
             agreements.append({"Metode": title, "Ulasan": found["n"], "Sesuai bintang (%)": round(found["sesuai"], 1),
                                "Cohen's kappa": round(found["kappa"], 3)})
     if agreements:
-        st.markdown("**Kesepakatan dengan bintang** (bintang 1–2 dan 4–5)")
+        st.markdown(tr("**Kesepakatan dengan bintang** (bintang 1–2 dan 4–5)"))
         st.dataframe(pd.DataFrame(agreements), hide_index=True, width="stretch")
 
     star = metadata.get("classifier_bintang") or {}
     if "akurasi" in star:
-        with st.expander("Evaluasi classifier dari bintang", icon=":material/fact_check:"):
+        with st.expander(tr("Evaluasi classifier dari bintang"), icon=":material/fact_check:"):
             cols = st.columns(3)
-            cols[0].metric("Akurasi (data uji)", f"{star['akurasi']:.3f}", border=True)
-            cols[1].metric("F1 makro", f"{star['f1_makro']:.3f}", border=True)
-            cols[2].metric("Latih / uji", f"{ui.fmt(star['data_latih'])} / {ui.fmt(star['data_uji'])}", border=True)
+            cols[0].metric(tr("Akurasi (data uji)"), f"{star['akurasi']:.3f}", border=True)
+            cols[1].metric(tr("F1 makro"), f"{star['f1_makro']:.3f}", border=True)
+            cols[2].metric(tr("Latih / uji"), f"{ui.fmt(star['data_latih'])} / {ui.fmt(star['data_uji'])}", border=True)
             st.dataframe(pd.DataFrame(star["per_kelas"]).T.round(3), width="stretch")
             matrix = star["matriks_kebingungan"]
-            st.caption("Matriks kebingungan (baris = bintang, kolom = tebakan)")
+            st.caption(tr("Matriks kebingungan (baris = bintang, kolom = tebakan)"))
             st.dataframe(pd.DataFrame(matrix["nilai"], index=matrix["label"], columns=matrix["label"]),
                          width="stretch")
     elif star.get("alasan"):
-        st.info(f"Classifier dari bintang tidak dilatih. {star['alasan']}", icon=":material/info:")
+        st.info(tr('Classifier dari bintang tidak dilatih. {0}', star['alasan']), icon=":material/info:")
 
     wrong = sn.mismatches(frame, rating, text_columns)
-    st.markdown(f"**Ketidakcocokan bintang dan teks** · {ui.fmt(len(wrong))} ulasan")
+    st.markdown(tr('**Ketidakcocokan bintang dan teks** · {0} ulasan', ui.fmt(len(wrong))))
     if wrong.empty:
-        st.caption("Tidak ada ulasan bintang 4–5 bernada negatif atau bintang 1–2 bernada positif.")
+        st.caption(tr("Tidak ada ulasan bintang 4–5 bernada negatif atau bintang 1–2 bernada positif."))
     else:
-        st.caption("Bintang 4–5 tapi teks negatif, atau bintang 1–2 tapi teks positif; diurutkan dari skor model "
-                   "tertinggi. Bisa berupa keluhan tersembunyi, sarkasme, atau salah tekan bintang.")
+        st.caption(tr("Bintang 4–5 tapi teks negatif, atau bintang 1–2 tapi teks positif; diurutkan dari skor model "
+                   "tertinggi. Bisa berupa keluhan tersembunyi, sarkasme, atau salah tekan bintang."))
         st.dataframe(wrong, hide_index=True, width="stretch", height=320)
         csv_download(wrong, f"ketidakcocokan-{name}", "dl-sn-mismatch")
 
 
 def aspects_section(frame, name):
-    st.subheader("Sentimen per aspek", anchor=False)
+    st.subheader(tr("Sentimen per aspek"), anchor=False)
     summary = sn.aspect_summary(frame)
     if summary.empty or not summary["Disebut"].sum():
-        st.caption("Tidak ada kalimat yang memuat kata kunci aspek.")
+        st.caption(tr("Tidak ada kalimat yang memuat kata kunci aspek."))
         return
-    st.caption("Cakupan = persentase baris yang menyebut aspek. Berbasis kata kunci, jadi baca contoh kalimatnya "
-               "sebelum menyimpulkan.")
+    st.caption(tr("Cakupan = persentase baris yang menyebut aspek. Berbasis kata kunci, jadi baca contoh kalimatnya "
+               "sebelum menyimpulkan."))
     columns = [f"{label_.capitalize()} (%)" for label_ in sn.SENTIMENTS]
     st.dataframe(summary, hide_index=True, width="stretch",
                  column_config={column: st.column_config.ProgressColumn(column, min_value=0, max_value=100,
@@ -285,22 +283,22 @@ def time_section(frame, name):
     has_version = "versi_aplikasi" in frame and frame["versi_aplikasi"].astype(str).str.strip().ne("").any()
     if not dates and not has_version:
         return
-    st.subheader("Dari waktu ke waktu", anchor=False)
+    st.subheader(tr("Dari waktu ke waktu"), anchor=False)
     if dates:
         left, right = st.columns(2)
-        column = left.selectbox("Kolom tanggal", dates, key=KEY + "date")
-        period = right.segmented_control("Periode", list(an.PERIODS), default="ME", required=True,
-                                         format_func=an.PERIODS.get, key=KEY + "period")
+        column = left.selectbox(tr("Kolom tanggal"), dates, key=KEY + "date")
+        period = right.segmented_control(tr("Periode"), list(an.PERIODS), default="ME", required=True,
+                                         format_func=lambda key: tr(an.PERIODS[key]), key=KEY + "period")
         table = sn.trend(frame, column, period)
         if table.empty:
-            st.caption("Tanggal pada kolom ini tidak bisa dibaca.")
+            st.caption(tr("Tanggal pada kolom ini tidak bisa dibaca."))
         else:
             lines(table, "Waktu", "Persentase sentimen per periode")
             csv_download(table, f"tren-sentimen-{name}", "dl-sn-trend")
     if has_version:
         table = sn.by_version(frame, date_column=dates[0] if dates else None)
         if not table.empty:
-            st.markdown("**Per versi aplikasi** (15 versi dengan ulasan terbanyak, urut rilis)")
+            st.markdown(tr("**Per versi aplikasi** (15 versi dengan ulasan terbanyak, urut rilis)"))
             st.dataframe(table, hide_index=True, width="stretch",
                          column_config={label_: st.column_config.ProgressColumn(label_, min_value=0, max_value=100,
                                                                                  format="%.1f%%")
@@ -312,7 +310,6 @@ def sentiment_details(job):
     """Shown in the dataset dialog of a sentiment job."""
     params, metadata = job["params"], job["metadata"]
     origin = params.get("masukan") or {}
-    st.caption(f"Masukan: {label(origin.get('sumber'))} · proyek {origin.get('proyek', '-')} · "
-               f"kolom {', '.join(params.get('kolom', []))}")
+    st.caption(tr('Masukan: {0} · proyek {1} · kolom {2}', label(origin.get('sumber')), origin.get('proyek', '-'), ', '.join(params.get('kolom', []))))
     if metadata.get("model"):
         st.code(sn.method_text(metadata, "teks"), language=None, wrap_lines=True)

@@ -8,6 +8,7 @@ from dataclasses import dataclass, field
 import pandas as pd
 
 from workspace_app import analysis as an
+from workspace_app import social as so
 from workspace_app import sources
 
 FAMILIES = {
@@ -34,6 +35,7 @@ RATING_COLUMNS = ("rating", "bintang", "score", "skor_ulasan")
 LAT_COLUMNS = ("lintang", "latitude", "lat")
 LON_COLUMNS = ("bujur", "longitude", "lon", "lng")
 SENTIMENT_SOURCE = "sentimen"
+EMOTION_SOURCE = "emosi"
 
 
 @dataclass
@@ -48,6 +50,9 @@ class Profile:
     has_panel: bool = False
     has_sentiment: bool = False
     has_version: bool = False
+    has_replies: bool = False
+    has_author: bool = False
+    has_likes: bool = False
 
 
 def origin_sources(job):
@@ -58,7 +63,7 @@ def origin_sources(job):
     if source == "preprocessing":
         origin = (params.get("masukan") or {}).get("sumber")
         return [origin] if origin else []
-    if source == SENTIMENT_SOURCE:
+    if source in (SENTIMENT_SOURCE, EMOTION_SOURCE):
         return list(params.get("sumber_asal") or [])
     return []
 
@@ -106,6 +111,9 @@ def profile(frame):
         has_panel={"negara", "tahun", "nilai"} <= lowered,
         has_sentiment="sentimen" in lowered,
         has_version="versi_aplikasi" in lowered and frame["versi_aplikasi"].astype(str).str.strip().ne("").any(),
+        has_replies=so.reply_columns(frame)[0] is not None,
+        has_author=so.author_column(frame) is not None,
+        has_likes=so.like_column(frame) is not None,
     )
 
 
@@ -185,11 +193,20 @@ CATALOGUE = {
     "B": [
         ("sentimen", "Sentimen komentar", "Teks tanpa label: sentimen dari model RoBERTa.", "sentimen", 1,
          lambda i: _need_text(i)),
-        ("jaringan-balasan", "Jaringan balasan dan akun sentral", "Struktur percakapan dari kolom induk.", None, 2,
-         lambda i: ""),
-        ("teks-berulang", "Indikasi teks berulang", "Komentar yang sangat mirip satu sama lain.", None, 2,
-         lambda i: _need_text(i, 50)),
-        ("emosi", "Emosi dan toksisitas", "Marah, senang, sedih, takut; ujaran kasar.", None, 2, lambda i: ""),
+        ("jaringan-balasan", "Jaringan balasan dan akun sentral",
+         "Siapa membalas siapa: PageRank, betweenness, dan komunitas Louvain dari kolom induk atau akun yang "
+         "dibalas.", "balasan", 2,
+         lambda i: _need(i.has_replies and i.has_author, "Tidak ada kolom akun dan kolom balasan "
+                                                         "(parent_id, id_induk, atau IN_REPLY_TO).")),
+        ("interaksi", "Teks teratas, akun aktif, sentimen × suka",
+         "Komentar paling disukai, seberapa timpang keaktifan akun, dan apakah nada tertentu lebih disukai.",
+         "interaksi", 2, lambda i: _need(i.has_author or i.has_likes, "Tidak ada kolom akun maupun jumlah suka.")),
+        ("teks-berulang", "Indikasi teks berulang",
+         "Komentar yang sangat mirip (kosinus TF-IDF): templat, salin-tempel, atau kampanye. Bukan bukti bot.",
+         "berulang", 2, lambda i: _need_text(i, 50)),
+        ("emosi", "Emosi dan toksisitas",
+         "Lima emosi (RoBERTa, EmoT) serta deteksi ujaran kebencian dan hinaan (IndoBERTweet, IndoToxic2024).",
+         "emosi", 2, lambda i: _need_text(i)),
         ("topik", "Topik percakapan", "Kelompok tema yang dibicarakan.", "topik", 0, lambda i: _need_text(i, 50)),
         ("tren", "Volume dari waktu ke waktu", "Kapan percakapan memuncak.", "tren", 0,
          lambda i: _need(i.date_columns, "Tidak ada kolom tanggal.")),

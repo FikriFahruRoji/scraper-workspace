@@ -4,8 +4,9 @@ Dokumen ini adalah kontrak fitur Analisis di nOCturnal Scraper: dataset apa
 cocok dengan analisis apa, memakai library gratis apa, dan dengan syarat data
 apa. Semua berjalan di komputer pengguna, tanpa token dan tanpa LLM.
 
-Status: **Tahap 1** (hub Rekomendasi Analisis + keluarga A Ulasan) sudah
-dibangun. Keluarga lain menyusul berurutan B → C → D → F → E → G → Lintas.
+Status: **Tahap 1** (hub Rekomendasi Analisis + keluarga A Ulasan) dan
+**Tahap 2** (keluarga B Media sosial) sudah dibangun.
+Keluarga lain menyusul berurutan C → D → F → E → G → Lintas.
 
 ## Prinsip
 
@@ -63,13 +64,16 @@ tanggal, versi aplikasi (Play/App Store), balasan pemilik (Maps).
 Karakteristik: tanpa label, banyak slang dan emoji, ada struktur balasan
 (`parent_id` Instagram, `id_induk` YouTube) dan jumlah suka.
 
-| Analisis | Metode / library | Syarat |
-|---|---|---|
-| Sentimen | model yang sama dengan A | ≥ 1 teks |
-| Emosi, toksisitas (opsional) | model transformer berlisensi yang lolos verifikasi | — |
-| Jaringan balasan | networkx: graf komentar → induk, akun sentral | kolom induk |
-| Komentar teratas, sentimen × suka, akun paling aktif | pandas | kolom suka / akun |
-| Indikasi teks berulang | kemiripan kosinus TF-IDF ≥ ambang (bukan tuduhan bot) | ≥ 50 teks |
+| Analisis | Metode / library | Syarat | Status |
+|---|---|---|---|
+| Sentimen | model yang sama dengan A | ≥ 1 teks | Tahap 1 |
+| Emosi dan toksisitas (halaman Emosi & Toksisitas, opsional) | emosi: `StevenLimcorn/indonesian-roberta-base-emotion-classifier` (MIT; dilatih pada EmoT IndoNLU, Apache-2.0), lima kelas senang/cinta/sedih/marah/takut tanpa kelas netral, F1 makro 0,72; probabilitas < 0,6 dilaporkan "tidak jelas" (bisa diubah). Toksisitas: `Exqrch/IndoBERTweet-HateSpeech` dan `-Insult` (CC BY-SA 4.0; dilatih pada IndoToxic2024, Apache-2.0) dengan tokenizer `indolem/indobertweet-base-uncased` (Apache-2.0), biner, ditandai bila p ≥ 0,5. Dijalankan sebagai pekerjaan antrean, hasilnya dataset turunan `emosi` | ≥ 1 teks | Tahap 2 |
+| Jaringan balasan (halaman Jaringan Balasan) | NetworkX (BSD): graf berarah akun pembalas → akun yang dibalas, dari `parent_id`/`id_induk` (via `id_komentar`) atau `IN_REPLY_TO`; derajat masuk/keluar berbobot, PageRank (α 0,85), betweenness (eksak ≤ 2.000 akun, selebihnya sampel 500 simpul), komunitas Louvain dan modularitas, seed 42; daftar relasi bisa dibuka di Gephi | kolom akun + kolom balasan | Tahap 2 |
+| Komentar teratas, akun paling aktif, sentimen × suka (halaman Interaksi & Akun) | pandas; ketimpangan keaktifan dengan koefisien Gini dan porsi 10 % akun teraktif; suka antarsentimen dengan uji Kruskal–Wallis dan ε² (SciPy) | kolom suka / akun; uji butuh ≥ 2 sentimen × ≥ 5 teks | Tahap 2 |
+| Indikasi teks berulang (halaman Teks Berulang) | kosinus TF-IDF unigram+bigram ≥ 0,9 (bisa diubah 0,70–1), tautan dan sebutan akun diseragamkan, teks < 3 kata dilewati, grup digabung transitif; bukan tuduhan bot | ≥ 50 teks | Tahap 2 |
+
+Kolom akun dikenali dari `username` (Instagram, X, Threads) atau `nama`
+(YouTube); kolom suka dari `suka`, `FAVORITE_COUNT`, atau `LIKE_COUNT`.
 
 ### C. Berita — 10 portal
 
@@ -140,4 +144,13 @@ saham × sentimen berita.
 - Bollerslev, T. (1986). Generalized autoregressive conditional heteroskedasticity. Journal of Econometrics 31(3).
 - Campello, R., Moulavi, D., & Sander, J. (2013). Density-based clustering based on hierarchical density estimates. PAKDD.
 - Aki, K. (1965). Maximum likelihood estimate of b in the formula log N = a − bM. Bull. Earthquake Research Institute 43.
+- Hagberg, A. A., Schult, D. A., & Swart, P. J. (2008). Exploring network structure, dynamics, and function using NetworkX. Proc. 7th Python in Science Conference.
+- Page, L., Brin, S., Motwani, R., & Winograd, T. (1999). The PageRank citation ranking: Bringing order to the web. Stanford InfoLab.
+- Brandes, U. (2001). A faster algorithm for betweenness centrality. Journal of Mathematical Sociology 25(2).
+- Blondel, V. D., Guillaume, J.-L., Lambiotte, R., & Lefebvre, E. (2008). Fast unfolding of communities in large networks. J. Stat. Mech. P10008.
+- Saputri, M. S., Mahendra, R., & Adriani, M. (2018). Emotion classification on Indonesian Twitter dataset. IALP.
+- Susanto, L. dkk. (2024). IndoToxic2024: A demographically-enriched dataset of hate speech and toxicity types for Indonesian language. arXiv:2406.19349.
+- Koto, F., Lau, J. H., & Baldwin, T. (2021). IndoBERTweet: A pretrained language model for Indonesian Twitter with effective domain-specific vocabulary initialization. EMNLP.
+- Kruskal, W. H., & Wallis, W. A. (1952). Use of ranks in one-criterion variance analysis. JASA 47(260).
+- Tomczak, M., & Tomczak, E. (2014). The need to report effect size estimates revisited. Trends in Sport Sciences 21(1).
 - Granger, C. W. J. (1969). Investigating causal relations by econometric models and cross-spectral methods. Econometrica 37(3).

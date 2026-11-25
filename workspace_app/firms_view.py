@@ -2,6 +2,8 @@
 import pandas as pd
 import streamlit as st
 
+from workspace_app.i18n import tr
+
 SOURCES = ("firms",)
 NAMES = {"firms": "Titik Api (NASA FIRMS)"}
 COUNTRIES = {
@@ -23,7 +25,7 @@ def _scraper():
 
 def _country_text(params):
     code = params.get("country", "")
-    return COUNTRIES.get(code, code.replace("_", " ")) or "belum dipilih"
+    return COUNTRIES.get(code, code.replace("_", " ")) or tr("belum dipilih")
 
 
 def form(source):
@@ -32,31 +34,29 @@ def form(source):
 
     scraper = _scraper()
     options = [*COUNTRIES, OTHER]
-    picked = st.selectbox("Negara", options, key=_key(source, "country"),
-                          format_func=lambda code: "Negara lain…" if code == OTHER else COUNTRIES[code])
+    picked = st.selectbox(tr("Negara"), options, key=_key(source, "country"),
+                          format_func=lambda code: tr("Negara lain…") if code == OTHER else tr(COUNTRIES[code]))
     other = ""
     if picked == OTHER:
-        other = st.text_input("Nama negara (bahasa Inggris)", key=_key(source, "other"),
-                              placeholder="Contoh: South Africa",
-                              help="Ejaan mengikuti arsip FIRMS. Bila arsip tidak ditemukan, coba ejaan lain.")
-    sensor = st.selectbox("Sensor", list(scraper.SENSORS), key=_key(source, "sensor"),
+        other = st.text_input(tr("Nama negara (bahasa Inggris)"), key=_key(source, "other"),
+                              placeholder=tr("Contoh: South Africa"),
+                              help=tr("Ejaan mengikuti arsip FIRMS. Bila arsip tidak ditemukan, coba ejaan lain."))
+    sensor = st.selectbox(tr("Sensor"), list(scraper.SENSORS), key=_key(source, "sensor"),
                           format_func=lambda code: scraper.SENSORS[code][0],
-                          help="VIIRS lebih rinci (375 m) dan tersedia sejak 2012. MODIS (1 km) tersedia sejak 2000.")
+                          help=tr("VIIRS lebih rinci (375 m) dan tersedia sejak 2012. MODIS (1 km) tersedia sejak 2000."))
     newest, oldest = scraper.last_year(), scraper.SENSORS[sensor][1]
     left, right = st.columns(2)
-    start = left.number_input("Tahun mulai", oldest, newest, key=_key(source, "start_year"),
+    start = left.number_input(tr("Tahun mulai"), oldest, newest, key=_key(source, "start_year"),
                               **_initial(_key(source, "start_year"), newest, "value"))
-    end = right.number_input("Tahun selesai", oldest, newest, key=_key(source, "end_year"),
+    end = right.number_input(tr("Tahun selesai"), oldest, newest, key=_key(source, "end_year"),
                              **_initial(_key(source, "end_year"), newest, "value"))
     confident = checkbox(source, "confident", "Hanya keyakinan nominal dan tinggi",
-                         help="Buang deteksi berkeyakinan rendah (VIIRS: rendah; MODIS: di bawah 30).")
+                         help=tr("Buang deteksi berkeyakinan rendah (VIIRS: rendah; MODIS: di bawah 30)."))
     vegetation = checkbox(source, "vegetation", "Hanya kebakaran vegetasi",
-                          help="Buang gunung api aktif, sumber panas tetap (misalnya industri), dan lepas pantai.")
-    limit = number(source, "count", "Jumlah titik maksimum", 0, 2_000_000, 200_000, step=10_000,
-                   help="0 mengambil semua. Satu tahun VIIRS untuk Indonesia bisa ratusan ribu titik.")
-    st.caption("Data: NASA FIRMS, arsip standar per negara dan tahun (tanpa kunci). Arsip baru lengkap setelah "
-               f"tahun berakhir, jadi data terbaru sampai {newest}. Excel maksimal 1.048.576 baris; untuk data "
-               "lebih besar pakai CSV.")
+                          help=tr("Buang gunung api aktif, sumber panas tetap (misalnya industri), dan lepas pantai."))
+    limit = number(source, "count", tr("Jumlah titik maksimum"), 0, 2_000_000, 200_000, step=10_000,
+                   help=tr("0 mengambil semua. Satu tahun VIIRS untuk Indonesia bisa ratusan ribu titik."))
+    st.caption(tr('Data: NASA FIRMS, arsip standar per negara dan tahun (tanpa kunci). Arsip baru lengkap setelah tahun berakhir, jadi data terbaru sampai {0}. Excel maksimal 1.048.576 baris; untuk data lebih besar pakai CSV.', newest))
     return {"country": other.strip() if picked == OTHER else picked, "sensor": sensor, "start_year": int(start),
             "end_year": int(end), "only_confident": confident, "only_vegetation": vegetation, "count": limit,
             "max_minutes": time_limit(source)}
@@ -67,28 +67,28 @@ def check(params, source="firms"):
     scraper = _scraper()
     params["country"] = scraper.normalize_country(params.get("country"))
     if params["sensor"] not in scraper.SENSORS:
-        raise ValueError("Sensor tidak dikenali.")
+        raise ValueError(tr("Sensor tidak dikenali."))
     first, newest = scraper.SENSORS[params["sensor"]][1], scraper.last_year()
     if params["start_year"] > params["end_year"]:
-        raise ValueError("Tahun mulai harus sebelum atau sama dengan tahun selesai.")
+        raise ValueError(tr("Tahun mulai harus sebelum atau sama dengan tahun selesai."))
     if params["start_year"] < first:
-        raise ValueError(f"Sensor ini mulai merekam pada {first}.")
+        raise ValueError(tr('Sensor ini mulai merekam pada {0}.', first))
     if params["end_year"] > newest:
-        raise ValueError(f"Arsip FIRMS baru sampai {newest}.")
+        raise ValueError(tr('Arsip FIRMS baru sampai {0}.', newest))
     if params["end_year"] - params["start_year"] + 1 > MAX_YEARS:
-        raise ValueError(f"Pilih paling banyak {MAX_YEARS} tahun per pengambilan.")
+        raise ValueError(tr('Pilih paling banyak {0} tahun per pengambilan.', MAX_YEARS))
 
 
 def summary(source, params):
     scraper = _scraper()
     flags = [name for key, name in (("only_confident", "keyakinan nominal+"), ("only_vegetation", "vegetasi saja"))
              if params.get(key)]
-    return [("Sumber", NAMES[source]), ("Negara", _country_text(params)),
+    return [("Sumber", tr(NAMES[source])), ("Negara", _country_text(params)),
             ("Sensor", scraper.SENSORS.get(params["sensor"], (params["sensor"],))[0]),
             ("Tahun", f"{params['start_year']} – {params['end_year']}"),
-            ("Filter", ", ".join(flags) or "tidak ada"),
-            ("Batas data", f"{params['count']:,}".replace(",", ".") if params.get("count") else "semua"),
-            ("Batas waktu", f"{params['max_minutes']} menit")]
+            ("Filter", ", ".join(flags) or tr("tidak ada")),
+            ("Batas data", f"{params['count']:,}".replace(",", ".") if params.get("count") else tr("semua")),
+            ("Batas waktu", tr("{0} menit", params['max_minutes']))]
 
 
 def method_rows(job):
@@ -99,7 +99,7 @@ def method_rows(job):
     return [("Negara", _country_text(params)),
             ("Sensor", scraper.SENSORS.get(params.get("sensor"), ("-",))[0]),
             ("Tahun", f"{params.get('start_year')} – {params.get('end_year')}"),
-            ("Filter", ", ".join(flags) or "tidak ada")]
+            ("Filter", ", ".join(flags) or tr("tidak ada"))]
 
 
 def seed(source, params):
@@ -129,14 +129,14 @@ def hints(job):
 def chart(frame, source="firms"):
     """Hotspot counts per month and a map of a sample of the points."""
     if not {"waktu_wib", "lintang", "bujur"} <= set(frame):
-        st.metric("Baris", len(frame))
+        st.metric(tr("Baris"), len(frame))
         return
     cols = st.columns(3)
-    cols[0].metric("Titik api", f"{len(frame):,}".replace(",", "."), border=True)
+    cols[0].metric(tr("Titik api"), f"{len(frame):,}".replace(",", "."), border=True)
     if "frp_mw" in frame and frame["frp_mw"].notna().any():
-        cols[1].metric("FRP tertinggi", f"{frame['frp_mw'].max():,.0f} MW".replace(",", "."), border=True)
+        cols[1].metric(tr("FRP tertinggi"), f"{frame['frp_mw'].max():,.0f} MW".replace(",", "."), border=True)
     if "siang_malam" in frame:
-        cols[2].metric("Terdeteksi malam", f"{(frame['siang_malam'] == 'malam').mean():.0%}", border=True)
+        cols[2].metric(tr("Terdeteksi malam"), f"{(frame['siang_malam'] == 'malam').mean():.0%}", border=True)
     months = pd.to_datetime(frame["waktu_wib"].str[:7], format="%Y-%m", errors="coerce").dropna()
     if months.nunique() > 1:
         st.bar_chart(months.dt.to_period("M").value_counts().sort_index().rename_axis("bulan").rename("titik api"))

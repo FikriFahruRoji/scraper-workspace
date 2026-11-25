@@ -13,6 +13,8 @@ import re
 
 import streamlit as st
 
+from workspace_app.i18n import language, tr
+
 # Chart colors for plotly, readable on both surfaces (Streamlit's own charts follow the theme).
 CHART_ACCENT = "#2B93AE"
 CHART_LINE = "rgba(130, 146, 162, .45)"
@@ -21,6 +23,11 @@ CHART_SURFACE = "rgba(130, 146, 162, .8)"
 # Navigation targets registered by the entrypoint, so views can link to pages
 # without importing the entrypoint. Empty when a view runs on its own (tests).
 PAGES = {}
+
+
+def pages():
+    return st.session_state.get("workspace-pages", PAGES)
+
 
 STATUS = {
     "running": "Berjalan", "stopping": "Sedang menghentikan", "completed": "Selesai",
@@ -206,6 +213,14 @@ dl.method dt, dl.method dd { margin: 0; padding: 8px 0; border-bottom: 1px solid
 dl.method dt { color: var(--muted); }
 dl.method dd { color: var(--ink); font-weight: 500; overflow-wrap: anywhere; }
 
+/* Sentiment share in a result row */
+.sentiment-strip { display: flex; align-items: center; gap: 10px; font-size: .8rem; color: var(--muted);
+    font-variant-numeric: tabular-nums; flex-wrap: wrap; }
+.sentiment-strip .bar { display: flex; width: 120px; height: 6px; border-radius: 3px; overflow: hidden;
+    background: var(--line); flex: none; }
+.sentiment-strip .bar span { display: block; height: 100%; }
+.sentiment-strip .f1 { flex-basis: 100%; }
+
 /* Browser surfaces: selection, focus, numerals */
 ::selection { background: var(--accent-soft); }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
@@ -265,7 +280,8 @@ def source_chip(source):
 
 def fmt(number):
     """Integer with Indonesian thousands separators: 102.424."""
-    return f"{int(number):,}".replace(",", ".")
+    formatted = f"{int(number):,}"
+    return formatted if language() == "en" else formatted.replace(",", ".")
 
 
 def page_header(title, subtitle="", *, back=None, actions=None, split=(2, 1)):
@@ -277,13 +293,13 @@ def page_header(title, subtitle="", *, back=None, actions=None, split=(2, 1)):
         cols = st.columns(list(split) if actions else [1], vertical_alignment="center")
         with cols[0]:
             with st.container(horizontal=True, vertical_alignment="center", gap="medium"):
-                if back and back in PAGES:
-                    if st.button("Kembali", icon=":material/arrow_back:", key="header-back"):
-                        st.switch_page(PAGES[back])
+                if back and back in pages():
+                    if st.button(tr("Kembali"), icon=":material/arrow_back:", key="header-back"):
+                        st.switch_page(pages()[back])
                 with st.container():
-                    st.title(title, anchor=False)
+                    st.title(tr(title), anchor=False)
                     if subtitle:
-                        st.caption(subtitle)
+                        st.caption(tr(subtitle))
         if actions:
             with cols[1]:
                 actions()
@@ -291,18 +307,18 @@ def page_header(title, subtitle="", *, back=None, actions=None, split=(2, 1)):
 
 def status_markdown(status):
     """Status pill as inline markdown, for places where it shares a line with text."""
-    return f":{STATUS_COLORS.get(status, 'gray')}-badge[{STATUS_ICONS.get(status, '')} {STATUS.get(status, status)}]"
+    return f":{STATUS_COLORS.get(status, 'gray')}-badge[{STATUS_ICONS.get(status, '')} {tr(STATUS.get(status, status))}]"
 
 
 def status_badge(status):
-    st.badge(STATUS.get(status, status), icon=STATUS_ICONS.get(status),
+    st.badge(tr(STATUS.get(status, status)), icon=STATUS_ICONS.get(status),
              color=STATUS_COLORS.get(status, "gray"))
 
 
 def friendly(message):
     if not message:
         return message
-    parts = [FRIENDLY_ERRORS.get(part.strip(), part.strip()) for part in str(message).split(";")]
+    parts = [tr(FRIENDLY_ERRORS[part.strip()]) if part.strip() in FRIENDLY_ERRORS else part.strip() for part in str(message).split(";")]
     return "; ".join(part for part in parts if part)
 
 
@@ -324,7 +340,7 @@ def long_date(value):
     if not moment:
         return "-"
     moment = moment.astimezone()
-    return f"{moment.day} {MONTHS[moment.month - 1]} {moment.year} pukul {moment:%H.%M}"
+    return f"{moment.day} {tr(MONTHS[moment.month - 1])} {moment.year} {tr('pukul')} {moment:%H.%M}"
 
 
 def short_datetime(value):
@@ -338,7 +354,7 @@ def short_datetime(value):
 
 def short_date(value):
     """'21 Okt 2026': the one compact date used next to long ones."""
-    return f"{value.day} {MONTHS[value.month - 1][:3]} {value.year}"
+    return f"{value.day} {tr(MONTHS[value.month - 1])[:3]} {value.year}"
 
 
 def duration(start, end):
@@ -348,26 +364,28 @@ def duration(start, end):
     seconds = max(0, int((last - first).total_seconds()))
     hours, rest = divmod(seconds, 3600)
     minutes, seconds = divmod(rest, 60)
-    parts = [f"{hours} jam"] if hours else []
+    parts = [tr("{0} jam", hours)] if hours else []
     if minutes:
-        parts.append(f"{minutes} menit")
+        parts.append(tr("{0} menit", minutes))
     if seconds or not parts:
-        parts.append(f"{seconds} detik")
+        parts.append(tr("{0} detik", seconds))
     return " ".join(parts)
 
 
 def ago(value):
     moment = parse_time(value)
     if not moment:
-        return "belum ada"
+        return tr("belum ada")
     seconds = int((datetime.now(timezone.utc) - moment).total_seconds())
     for size, unit in ((86400, "hari"), (3600, "jam"), (60, "menit")):
         if seconds >= size:
-            return f"{seconds // size} {unit} lalu"
-    return "baru saja"
+            return tr("{0} {1} lalu", seconds // size, tr(unit))
+    return tr("baru saja")
 
 
-def highlight_nav(path="scraping"):
-    """Keep a menu item highlighted on source forms, which are hidden from the menu."""
+def highlight_nav(path=""):
+    """Keep a menu item highlighted on source forms, which are hidden from the menu.
+
+    The default ("") is the start page, Lakukan Scraping, whose menu link is the site root."""
     st.html(f"""<style>[data-testid="stSidebarNav"] a[href$="/{path}"] {{ background: var(--accent) !important; }}
     [data-testid="stSidebarNav"] a[href$="/{path}"] span {{ color: var(--accent-ink) !important; }}</style>""")

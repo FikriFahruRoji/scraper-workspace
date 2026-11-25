@@ -45,10 +45,11 @@ KNOWN = tuple(sources.LABELS)
 PREPROCESSING = "preprocessing"
 MERGED = "gabungan"
 SENTIMENT = "sentimen"
+EMOTION = "emosi"
 # Merged datasets behave like scraped ones for input purposes (preprocessing, analysis).
 INPUTS = (*KNOWN, MERGED)
 # Datasets made from other datasets; they keep their rows as saved (internal columns included).
-DERIVED = (PREPROCESSING, MERGED, SENTIMENT)
+DERIVED = (PREPROCESSING, MERGED, SENTIMENT, EMOTION)
 
 
 def _marks(values):
@@ -349,6 +350,40 @@ class JobManager:
 
         return self.start(SENTIMENT, params, project=project, work=work)
 
+    def start_emotion(self, params, rows, columns, keys, *, project, classifiers=None):
+        """Rate emotion and/or toxicity (`keys`, see emotion.SPECS) of `rows` in the background and save the
+        rows plus the result columns as a job. Models are loaded (and downloaded when `params["unduh_model"]`
+        is set) inside the job. Tests pass `classifiers` instead."""
+        if not clean_project(project):
+            raise ValueError("Isi nama proyek terlebih dahulu.")
+        if not columns:
+            raise ValueError("Pilih minimal satu kolom teks.")
+        if not keys:
+            raise ValueError("Pilih minimal satu analisis.")
+        from workspace_app import emotion
+
+        def work(stop, log, checkpoint):
+            models = dict(classifiers or {})
+            for key in keys:
+                if key in models:
+                    continue
+                spec = emotion.SPECS[key]
+                paths = emotion.model_paths(self.directory, key)
+                if paths is None:
+                    if not params.get("unduh_model"):
+                        return [], None, "Model belum diunduh. Setujui unduhan model di halaman Emosi & Toksisitas."
+                    log(f"Mengunduh model {spec.model_id} (sekitar {spec.size_mb} MB)…")
+                    paths = emotion.model_paths(self.directory, key, download=True)
+                if stop.is_set():
+                    return [], None, None
+                log(f"Memuat model {spec.title.lower()}…")
+                models[key] = emotion.Classifier(key, paths)
+            log(f"Menilai {_fmt(len(rows))} baris dari kolom {', '.join(columns)}.")
+            output, metadata = emotion.run(rows, columns, keys, models, stop=stop, log=log, checkpoint=checkpoint)
+            return output, metadata, None
+
+        return self.start(EMOTION, params, project=project, work=work)
+
     def input_rows(self, job_ids, limit=None):
         """Rows of the given jobs, newest job first, tagged with `pekerjaan_asal`.
 
@@ -444,7 +479,13 @@ class JobManager:
         clause = f"WHERE {' AND '.join(where)}" if where else ""
         with self.db() as db:
             rows = db.execute(
-                f"SELECT id, source, status, started, finished, count, project FROM jobs {clause} "
+                # A list row of an analysis result also shows its input and sentiment share; the rest of the
+                # parameters and metadata stay in the database until the job is opened.
+                f"SELECT id, source, status, started, finished, count, project, "
+                f"json_extract(params, '$.masukan.proyek') AS masukan, "
+                f"json_extract(params, '$.sumber_asal[0]') AS sumber_asal, "
+                f"json_extract(metadata, '$.sentimen') AS sentimen, "
+                f"json_extract(metadata, '$.classifier_bintang.f1_makro') AS f1_bintang FROM jobs {clause} "
                 "ORDER BY started DESC, rowid DESC LIMIT ?", (*values, limit),
             )
             return [dict(row) for row in rows]

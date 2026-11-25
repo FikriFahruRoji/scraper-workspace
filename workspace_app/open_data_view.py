@@ -5,6 +5,8 @@ import re
 import pandas as pd
 import streamlit as st
 
+from workspace_app.i18n import tr
+
 from workspace_app import disaster_view, firms_view, nature_view, oecd_view, pangan_view, sinta_view
 from workspace_app.countries import COUNTRIES, clean_codes
 
@@ -68,31 +70,31 @@ def form(source):
 
     this_year = date.today().year
     with st.container():
-        chosen = st.multiselect("Negara", list(COUNTRIES), key=_key(source, "countries"),
-                                format_func=lambda code: f"{COUNTRIES[code]} ({code})",
+        chosen = st.multiselect(tr("Negara"), list(COUNTRIES), key=_key(source, "countries"),
+                                format_func=lambda code: f"{tr(COUNTRIES[code])} ({code})",
                                 **_initial(_key(source, "countries"), ["IDN"], "default"))
-        everything = st.checkbox("Semua negara dan wilayah", key=_key(source, "all"),
-                                 help="Termasuk kelompok seperti dunia, ASEAN, dan Uni Eropa. "
-                                      "Hasilnya bisa sangat banyak.")
-        extra = st.text_input("Kode negara lain (opsional)", key=_key(source, "extra_countries"),
-                              placeholder="Contoh: NOR, CHE", disabled=everything,
-                              help="Kode tiga huruf ISO, dipisah koma atau spasi.")
-        picked = st.multiselect("Indikator", list(INDICATORS[source]), key=_key(source, "indicators"),
-                                format_func=lambda code: f"{INDICATORS[source][code]} ({code})",
+        everything = st.checkbox(tr("Semua negara dan wilayah"), key=_key(source, "all"),
+                                 help=tr("Termasuk kelompok seperti dunia, ASEAN, dan Uni Eropa. "
+                                      "Hasilnya bisa sangat banyak."))
+        extra = st.text_input(tr("Kode negara lain (opsional)"), key=_key(source, "extra_countries"),
+                              placeholder=tr("Contoh: NOR, CHE"), disabled=everything,
+                              help=tr("Kode tiga huruf ISO, dipisah koma atau spasi."))
+        picked = st.multiselect(tr("Indikator"), list(INDICATORS[source]), key=_key(source, "indicators"),
+                                format_func=lambda code: f"{tr(INDICATORS[source][code])} ({code})",
                                 **_initial(_key(source, "indicators"), [next(iter(INDICATORS[source]))], "default"))
-        more = st.text_input("Kode indikator lain (opsional)", key=_key(source, "extra_indicators"),
+        more = st.text_input(tr("Kode indikator lain (opsional)"), key=_key(source, "extra_indicators"),
                              placeholder="Contoh: " + ("SP.POP.GROW" if source == "worldbank" else "GGR_NGDP"),
                              help=FINDER[source])
         left, right = st.columns(2)
-        start = int(left.number_input("Tahun mulai", 1960, this_year + 10, 2010, key=_key(source, "start_year")))
+        start = int(left.number_input(tr("Tahun mulai"), 1960, this_year + 10, 2010, key=_key(source, "start_year")))
         end = int(right.number_input(
-            "Tahun selesai", 1960, this_year + 10, this_year, key=_key(source, "end_year"),
-            help="IMF memuat proyeksi beberapa tahun ke depan; tiap baris diberi tanda aktual atau proyeksi."
+            tr("Tahun selesai"), 1960, this_year + 10, this_year, key=_key(source, "end_year"),
+            help=tr("IMF memuat proyeksi beberapa tahun ke depan; tiap baris diberi tanda aktual atau proyeksi.")
             if source == "imf" else None))
         drop_empty = True
         if source == "worldbank":
-            drop_empty = st.checkbox("Buang tahun tanpa nilai", True, key=_key(source, "drop_empty"),
-                                     help="Banyak indikator belum punya nilai untuk tahun terbaru.")
+            drop_empty = st.checkbox(tr("Buang tahun tanpa nilai"), True, key=_key(source, "drop_empty"),
+                                     help=tr("Banyak indikator belum punya nilai untuk tahun terbaru."))
     params = {"countries": ["all"] if everything else list(dict.fromkeys([*chosen, *clean_codes(extra)])),
               "indicators": list(dict.fromkeys([*picked, *_text_codes(more)])),
               "start_year": start, "end_year": end, "max_minutes": time_limit(source)}
@@ -106,15 +108,15 @@ def check(params, source="worldbank"):
     if module := _other(source):
         return module.check(params, source)
     if not params["countries"]:
-        raise ValueError("Pilih minimal satu negara.")
+        raise ValueError(tr("Pilih minimal satu negara."))
     if any(code != "all" and not re.fullmatch(r"[A-Z]{3}", code) for code in params["countries"]):
-        raise ValueError("Kode negara harus tiga huruf, misalnya IDN atau MYS.")
+        raise ValueError(tr("Kode negara harus tiga huruf, misalnya IDN atau MYS."))
     if not params["indicators"]:
-        raise ValueError("Pilih minimal satu indikator.")
+        raise ValueError(tr("Pilih minimal satu indikator."))
     if bad := [code for code in params["indicators"] if not CODE_RE.fullmatch(code)]:
-        raise ValueError(f"Kode indikator tidak valid: {', '.join(bad)}.")
+        raise ValueError(tr('Kode indikator tidak valid: {0}.', ', '.join(bad)))
     if params["start_year"] > params["end_year"]:
-        raise ValueError("Tahun mulai harus sebelum atau sama dengan tahun selesai.")
+        raise ValueError(tr("Tahun mulai harus sebelum atau sama dengan tahun selesai."))
 
 
 def countries_text(codes):
@@ -129,11 +131,11 @@ def summary(source, params):
         return module.summary(source, params)
     from workspace_app import ui
 
-    return [("Sumber", NAMES[source]), ("Negara", countries_text(params["countries"]) if params["countries"]
-                                        else "belum dipilih"),
-            ("Indikator", f"{ui.fmt(len(params['indicators']))} indikator" if params["indicators"] else "belum dipilih"),
+    return [("Sumber", tr(NAMES[source])), ("Negara", countries_text(params["countries"]) if params["countries"]
+                                        else tr("belum dipilih")),
+            ("Indikator", tr("{0} indikator", ui.fmt(len(params['indicators']))) if params["indicators"] else tr("belum dipilih")),
             ("Tahun", f"{params['start_year']} – {params['end_year']}"),
-            ("Batas waktu", f"{params['max_minutes']} menit")]
+            ("Batas waktu", tr("{0} menit", params['max_minutes']))]
 
 
 def method_rows(job):
@@ -184,19 +186,19 @@ def chart(frame, source="worldbank"):
     if module := _other(source):
         return module.chart(frame, source)
     if not {"tahun", "nilai", "negara"} <= set(frame):
-        st.metric("Baris", len(frame))
+        st.metric(tr("Baris"), len(frame))
         return
     labels = frame.drop_duplicates("kode_indikator").set_index("kode_indikator")["indikator"].to_dict()
-    code = st.selectbox("Indikator", list(labels), format_func=lambda value: f"{labels[value]} ({value})",
+    code = st.selectbox(tr("Indikator"), list(labels), format_func=lambda value: f"{labels[value]} ({value})",
                         key="open-data-chart")
     subset = frame[frame["kode_indikator"] == code].dropna(subset=["nilai"])
     top = subset.groupby("negara").size().sort_values(ascending=False).head(8).index
     table = subset[subset["negara"].isin(top)].pivot_table(index="tahun", columns="negara", values="nilai")
     if table.empty:
-        st.info("Tidak ada nilai untuk indikator ini.")
+        st.info(tr("Tidak ada nilai untuk indikator ini."))
         return
     st.line_chart(table)
     if len(subset["negara"].unique()) > 8:
-        st.caption("Grafik menampilkan 8 negara dengan data terbanyak. Tabel di tab Data memuat semuanya.")
+        st.caption(tr("Grafik menampilkan 8 negara dengan data terbanyak. Tabel di tab Data memuat semuanya."))
     if "jenis" in frame and (frame["jenis"] == "proyeksi").any():
-        st.caption("Nilai berlabel proyeksi di kolom jenis adalah perkiraan IMF, bukan data aktual.")
+        st.caption(tr("Nilai berlabel proyeksi di kolom jenis adalah perkiraan IMF, bukan data aktual."))

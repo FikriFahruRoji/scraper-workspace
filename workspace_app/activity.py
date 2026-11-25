@@ -1,6 +1,8 @@
 """The running-job notice with its Hentikan button, refreshed every second."""
 import streamlit as st
 
+from workspace_app.i18n import tr
+
 from workspace_app import ui
 from workspace_app.sources import label
 
@@ -16,19 +18,20 @@ def activity(manager, framed=True):
         st.rerun()
     if not active:
         return
-    title = label(active["source"])
+    title = tr(label(active["source"]))
     with st.container(key="panel-activity" if framed else "activity-inline", border=False):
         info, controls = st.columns([4, 1], vertical_alignment="center")
         if active["stopping"]:
-            info.warning(f"{title} · sedang menghentikan", icon=":material/pause_circle:")
+            info.warning(tr('{0} · sedang menghentikan', title), icon=":material/pause_circle:")
         elif active["login"]:
-            info.info(f"{title} · login di jendela browser", icon=":material/login:")
+            info.info(tr('{0} · login di jendela browser', title), icon=":material/login:")
         else:
             count = ui.fmt(manager.saved_count(active["id"]))
-            verb = {"preprocessing": "preprocessing berjalan", "sentimen": "analisis sentimen berjalan"}.get(
+            verb = {"preprocessing": "preprocessing berjalan", "sentimen": "analisis sentimen berjalan",
+                     "emosi": "analisis emosi berjalan"}.get(
                 active["source"], "mengambil data")
-            info.info(f"{title} · {verb} · {count} baris tersimpan", icon="spinner")
-        if controls.button("Hentikan", key=f"workspace-stop-{'top' if framed else 'form'}",
+            info.info(tr('{0} · {1} · {2} baris tersimpan', title, tr(verb), count), icon="spinner")
+        if controls.button(tr("Hentikan"), key=f"workspace-stop-{'top' if framed else 'form'}",
                            disabled=active["stopping"], icon=":material/stop_circle:", width="stretch"):
             manager.stop()
             st.rerun()

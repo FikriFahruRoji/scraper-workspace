@@ -1,0 +1,263 @@
+<style>
+/* Peta Analisis (Info page). Scoped to .peta and coloured with the app's tokens (workspace_app/ui.py).
+   Read as a document: a sticky stage index on the left, sections divided by hairlines instead of cards.
+   Same content as docs/ANALISIS.md. Static file: no scripts, no external resources. */
+.peta { --gap: 56px; display: grid; grid-template-columns: 232px minmax(0, 1fr); column-gap: 56px;
+  max-width: 1240px; color: var(--ink); font-size: .95rem; font-weight: 400; line-height: 1.6; padding: 8px 0 64px }
+.peta * { box-sizing: border-box }
+.peta p, .peta td, .peta dd, .peta li { font-weight: 400 }
+.peta h2, .peta h3 { margin: 0; color: var(--ink); text-wrap: balance; letter-spacing: -.01em }
+.peta h2 { font-size: 1.3rem; font-weight: 650; line-height: 1.25 }
+.peta h3 { font-size: 1.12rem; font-weight: 650; line-height: 1.3 }
+.peta p { margin: 0; text-wrap: pretty }
+.peta a { color: inherit }
+.peta code { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: .84em; color: var(--ink);
+  background: rgba(16, 24, 32, .05); padding: 1px 5px; border-radius: 4px; overflow-wrap: anywhere }
+.peta .muted { color: var(--muted) }
+.peta .on { color: var(--accent); font-weight: 600; white-space: nowrap }
+.peta .on::before { content: ""; display: inline-block; width: 7px; height: 7px; border-radius: 50%;
+  background: currentColor; margin-right: 7px; vertical-align: .08em }
+.peta .later { color: var(--muted); white-space: nowrap }
+
+/* Stage index: the order the analyses are built in, doubles as navigation */
+.peta .index { grid-row: 1 / span 20; align-self: start; position: sticky; top: 24px }
+.peta .index-title { font-size: .82rem; font-weight: 600; color: var(--muted); margin-bottom: 10px }
+.peta .index ol { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line) }
+.peta .index li { border-bottom: 1px solid var(--line) }
+.peta .index a { display: grid; grid-template-columns: 22px 1fr auto; gap: 2px 10px; align-items: baseline;
+  padding: 9px 8px 9px 4px; text-decoration: none; border-radius: 6px; transition: background-color .15s cubic-bezier(.23, 1, .32, 1) }
+.peta .index a:hover { background: rgba(16, 24, 32, .04) }
+.peta .index a:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px }
+.peta .index .key { font-weight: 650; color: var(--muted); font-variant-numeric: tabular-nums }
+.peta .index .name { font-weight: 550; font-size: .9rem; line-height: 1.3 }
+.peta .index .when { font-size: .78rem; color: var(--muted); font-variant-numeric: tabular-nums }
+.peta .index .done .key, .peta .index .done .when { color: var(--accent) }
+.peta .index .done .when { font-weight: 600 }
+
+/* Main column */
+.peta .main { display: grid; gap: var(--gap); min-width: 0 }
+.peta .lede { font-size: 1.12rem; line-height: 1.55; max-width: 60ch }
+.peta .lede + p { margin-top: 12px; color: var(--muted); max-width: 66ch }
+.peta section { display: grid; gap: 18px; border-top: 1px solid var(--ink); padding-top: 18px }
+.peta section > .lead { color: var(--muted); max-width: 70ch }
+
+/* Principles: definition list, two columns */
+.peta .principles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 40px; margin: 0; padding: 0 }
+.peta .principles div { padding: 12px 0; border-bottom: 1px solid var(--line) }
+.peta .principles dt { font-weight: 600; margin-bottom: 2px }
+.peta .principles dd { margin: 0; color: var(--muted); font-size: .9rem; max-width: 56ch }
+
+/* Tables */
+.peta table { border-collapse: collapse; width: 100%; margin: 0; font-size: .89rem }
+.peta th, .peta td { text-align: left; vertical-align: top; padding: 10px 16px 10px 0; border: 0;
+  border-bottom: 1px solid var(--line); color: var(--ink) }
+.peta th:last-child, .peta td:last-child { padding-right: 0 }
+.peta th { font-size: .8rem; font-weight: 600; color: var(--muted); padding-top: 0 }
+.peta tr:last-child td { border-bottom: 0 }
+.peta .rules td:first-child { width: 42% }
+.peta .rules td:last-child { font-weight: 600 }
+.peta .matrix td:first-child { font-weight: 600; width: 23% }
+.peta .matrix td:nth-child(3) { color: var(--muted); width: 19% }
+.peta .matrix td:last-child, .peta .matrix th:last-child { width: 1%; white-space: nowrap; text-align: right }
+
+/* Families */
+.peta .family { display: grid; gap: 14px; scroll-margin-top: 24px }
+.peta .family + .family { border-top: 1px solid var(--line); padding-top: 32px; margin-top: 18px }
+.peta .family-head { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; column-gap: 14px; align-items: baseline }
+.peta .family-head .key { font-size: 1.12rem; font-weight: 650; color: var(--accent); min-width: 1.1em }
+.peta .family-head .tally { font-size: .82rem; color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums }
+.peta .family-head .sources { grid-column: 2 / -1; color: var(--muted); font-size: .9rem; margin-top: 2px; max-width: 72ch }
+.peta .note { color: var(--muted); font-size: .86rem; max-width: 72ch }
+.peta .note b { color: var(--ink); font-weight: 600 }
+
+/* References */
+.peta .refs { margin: 0; padding-left: 1.6em; columns: 2 360px; column-gap: 40px; color: var(--muted); font-size: .84rem;
+  line-height: 1.5; font-variant-numeric: tabular-nums }
+.peta .refs li { break-inside: avoid; margin-bottom: 8px; padding-left: 2px }
+
+@media (max-width: 1100px) {
+  .peta { grid-template-columns: minmax(0, 1fr); --gap: 44px }
+  .peta .index { position: static; grid-row: auto; margin-bottom: 40px }
+  .peta .index ol { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 24px }
+}
+@media (max-width: 720px) {
+  .peta .index ol, .peta .principles { grid-template-columns: minmax(0, 1fr) }
+  .peta .lede { font-size: 1.04rem }
+  /* Tables become stacked records */
+  .peta .matrix thead { display: none }
+  .peta .matrix tr { display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; padding: 12px 0; border-bottom: 1px solid var(--line) }
+  .peta .matrix tr:last-child { border-bottom: 0 }
+  .peta .matrix td { display: block; width: auto !important; padding: 0; border: 0 }
+  .peta .matrix td:nth-child(2), .peta .matrix td:nth-child(3) { grid-column: 1 / -1 }
+  .peta .matrix td:nth-child(3):not(:empty)::before { content: "Syarat: " }
+  .peta .matrix td:last-child { grid-row: 1; grid-column: 2 }
+  .peta .family-head { grid-template-columns: auto minmax(0, 1fr) }
+  .peta .family-head .tally { grid-column: 2; white-space: normal }
+}
+@media (prefers-reduced-motion: reduce) { .peta .index a { transition: none } }
+</style>
+<div class="peta">
+<nav aria-label="Urutan tahap analisis" class="index">
+<div class="index-title">Implementation order</div>
+<ol>
+<li class="done"><a href="#peta-a"><span class="key">A</span><span class="name">Reviews</span><span class="when">Available</span></a></li>
+<li class="done"><a href="#peta-b"><span class="key">B</span><span class="name">Social media</span><span class="when">Available</span></a></li>
+<li><a href="#peta-c"><span class="key">C</span><span class="name">News</span><span class="when">Stage 3</span></a></li>
+<li><a href="#peta-d"><span class="key">D</span><span class="name">Time series</span><span class="when">Stage 4</span></a></li>
+<li><a href="#peta-f"><span class="key">F</span><span class="name">Geospatial</span><span class="when">Stage 5</span></a></li>
+<li><a href="#peta-e"><span class="key">E</span><span class="name">Country panels</span><span class="when">Stage 6</span></a></li>
+<li><a href="#peta-g"><span class="key">G</span><span class="name">Bibliometrics</span><span class="when">Stage 7</span></a></li>
+<li><a href="#peta-lintas"><span class="key">+</span><span class="name">Across datasets</span><span class="when">After G</span></a></li>
+</ol>
+</nav>
+<div class="main">
+<div>
+<p class="lede">The 20 data sources fall into seven groups. Each group has its own methods, open libraries, and data requirements.</p>
+<p>Analysis runs on your laptop without API tokens or an LLM. Recommended Analyses, reviews (A), and social media (B) are available now. The index shows the remaining stages.</p>
+</div>
+<section>
+<h2>Design principles</h2>
+<dl class="principles">
+<div><dt>Two levels</dt><dd>Lightweight methods use scikit-learn, dictionaries, or NMF. Optional transformer and BERTopic models are available through <code>requirements-analysis.txt</code>. You choose when to download model weights.</dd></div>
+<div><dt>Background inference</dt><dd>Sentiment analysis on large datasets shares the collection queue. You can stop a job and open its saved output as a new dataset.</dd></div>
+<div><dt>Research output</dt><dd>Results include parameters, evaluation metrics, the random seed, model version, and a methods paragraph for your report.</dd></div>
+<div><dt>Data requirements</dt><dd>If a dataset falls short of a method’s requirements, the app explains what is missing.</dd></div>
+<div><dt>Text input by method</dt><dd>Transformers read lightly normalized original text. TF-IDF, dictionary methods, and topic models read cleaned text.</dd></div>
+<div><dt>Licensing</dt><dd>Default components use permissive licenses (MIT, Apache, or BSD). The interface labels components restricted to noncommercial use.</dd></div>
+</dl>
+</section>
+<section>
+<h2>How the app identifies data types</h2>
+<p class="lead">The app checks the job’s source first. Preprocessing and sentiment jobs retain their original source. Merged datasets use the column <code>sumber_data</code>. For unknown sources, the app checks the columns below. A dataset can belong to several groups.</p>
+<table class="rules">
+<thead><tr><th>Dataset contains</th><th>Group</th></tr></thead>
+<tbody>
+<tr><td>text and <code>rating</code> 1–5</td><td>A · Reviews</td></tr>
+<tr><td>text without ratings</td><td>B · Social media or C · News</td></tr>
+<tr><td><code>lintang</code> and <code>bujur</code></td><td>F · Geospatial</td></tr>
+<tr><td><code>negara</code>, <code>tahun</code>, and <code>nilai</code></td><td>E · Country panels</td></tr>
+<tr><td>dates and numeric columns</td><td>D · Time series</td></tr>
+</tbody>
+</table>
+</section>
+<section>
+<h2>Methods by group</h2>
+<div class="family" id="peta-a">
+<div class="family-head"><span class="key">A</span><h3>Star-rated reviews</h3><span class="tally">6 of 6 available</span>
+<p class="sources">Play Store, App Store, and Google Maps reviews. Short opinions come with 1–5 stars, dates, and sometimes app versions or owner replies.</p></div>
+<table class="matrix">
+<thead><tr><th>Analysis</th><th>Method / library</th><th>Requirements</th><th>Status</th></tr></thead>
+<tbody>
+<tr><td>Model-based sentiment</td><td>Indonesian RoBERTa <code>w11wo/indonesian-roberta-base-sentiment-classifier</code> (MIT, trained on IndoNLU SmSA)</td><td>≥ 1 text</td><td><span class="on">Available</span></td></tr>
+<tr><td>Star-based sentiment</td><td>TF-IDF and logistic regression. Stars 1–2 are negative and 4–5 positive. Stratified 80/20 split, seed 42</td><td>≥ 200 reviews, ≥ 30 per class</td><td><span class="on">Available</span></td></tr>
+<tr><td>Star–text disagreement</td><td>high ratings with negative text and vice versa. Agreement measured with Cohen’s kappa</td><td>rating column</td><td><span class="on">Available</span></td></tr>
+<tr><td>Aspect sentiment</td><td>editable aspect dictionaries with App and Place presets. The model scores sentences that mention each aspect</td><td>≥ 1 aspect</td><td><span class="on">Available</span></td></tr>
+<tr><td>Sentiment trends</td><td>proportions by month and app version</td><td>date / version</td><td><span class="on">Available</span></td></tr>
+<tr><td>Words and topics</td><td>word frequency, NMF</td><td>≥ 50 texts</td><td><span class="on">Available</span></td></tr>
+</tbody>
+</table>
+</div>
+<div class="family" id="peta-b">
+<div class="family-head"><span class="key">B</span><h3>Social media text</h3><span class="tally">5 of 5 available</span>
+<p class="sources">Instagram, X, Threads, and YouTube. Posts and comments often contain slang and emoji. Reply links and like counts provide additional structure.</p></div>
+<table class="matrix">
+<thead><tr><th>Analysis</th><th>Method / library</th><th>Requirements</th><th>Status</th></tr></thead>
+<tbody>
+<tr><td>Sentiment</td><td>same model as group A</td><td>≥ 1 text</td><td><span class="on">Available</span></td></tr>
+<tr><td>Emotion and toxicity</td><td>RoBERTa emotion model <code>StevenLimcorn/indonesian-roberta-base-emotion-classifier</code> (MIT, EmoT); IndoBERTweet hate speech and insult detectors trained on IndoToxic2024 (CC BY-SA 4.0)</td><td>≥ 1 text</td><td><span class="on">Available</span></td></tr>
+<tr><td>Reply networks and central accounts</td><td>NetworkX directed graph from <code>parent_id</code> / <code>id_induk</code> / <code>IN_REPLY_TO</code>. PageRank, betweenness, and Louvain communities (seed 42)</td><td>account and reply columns</td><td><span class="on">Available</span></td></tr>
+<tr><td>Top comments, sentiment vs. likes, and active accounts</td><td>pandas, Gini coefficient for account activity, and the Kruskal–Wallis test with ε² (SciPy)</td><td>likes / accounts</td><td><span class="on">Available</span></td></tr>
+<tr><td>Repeated text</td><td>TF-IDF cosine similarity ≥ 0.9 with transitive grouping. Similarity alone cannot establish bot activity</td><td>≥ 50 texts</td><td><span class="on">Available</span></td></tr>
+</tbody>
+</table>
+</div>
+<div class="family" id="peta-c">
+<div class="family-head"><span class="key">C</span><h3>News</h3><span class="tally">1 of 4 available</span>
+<p class="sources">Long, dated articles from 10 Indonesian news outlets.</p></div>
+<table class="matrix">
+<thead><tr><th>Analysis</th><th>Method / library</th><th>Requirements</th><th>Status</th></tr></thead>
+<tbody>
+<tr><td>Words that distinguish outlets</td><td>weighted log-odds ratio with a Dirichlet prior (Monroe et al., 2008)</td><td>≥ 2 outlets</td><td><span class="later">Stage 3</span></td></tr>
+<tr><td>Sentiment by outlet</td><td>same model as group A</td><td></td><td><span class="on">Available</span></td></tr>
+<tr><td>Topics over time</td><td>BERTopic + <code>paraphrase-multilingual-MiniLM-L12-v2</code>. Lightweight option: NMF. Evaluate topic coherence</td><td>≥ 50 articles</td><td><span class="later">Stage 3</span></td></tr>
+<tr><td>Named entities</td><td>optional IndoBERT NER following license review</td><td></td><td><span class="later">Stage 3</span></td></tr>
+</tbody>
+</table>
+</div>
+<div class="family" id="peta-d">
+<div class="family-head"><span class="key">D</span><h3>Time series</h3><span class="tally">Stage 4</span>
+<p class="sources">Stock prices, PIHPS food prices, and Open-Meteo weather. Numeric observations ordered by date.</p></div>
+<table class="matrix">
+<thead><tr><th>Analysis</th><th>Method / library</th><th>Requirements</th><th>Status</th></tr></thead>
+<tbody>
+<tr><td>Forecasting</td><td>statsforecast AutoARIMA, AutoETS, and MSTL. Backtest using MAPE/MASE against a naive baseline</td><td>≥ 2 cycles and ≥ 30 points, horizon ≤ 20%</td><td><span class="later">Stage 4</span></td></tr>
+<tr><td>Decomposition and stationarity</td><td>statsmodels STL and the ADF test</td><td>≥ 2 cycles</td><td><span class="later">Stage 4</span></td></tr>
+<tr><td>Ramadan and Eid effects</td><td>calendar flags from <code>holidays</code></td><td>daily food prices</td><td><span class="later">Stage 4</span></td></tr>
+<tr><td>Stocks</td><td>returns and GARCH(1,1) with <code>arch</code>, MA/RSI/MACD with pandas, compared against a random walk</td><td>≥ 250 days for GARCH</td><td><span class="later">Stage 4</span></td></tr>
+</tbody>
+</table>
+</div>
+<div class="family" id="peta-f">
+<div class="family-head"><span class="key">F</span><h3>Geospatial events</h3><span class="tally">Stage 5</span>
+<p class="sources">USGS, NASA FIRMS, GDACS, EONET, and Google Maps Places. Event points have latitude and longitude.</p></div>
+<table class="matrix">
+<thead><tr><th>Analysis</th><th>Method / library</th><th>Requirements</th><th>Status</th></tr></thead>
+<tbody>
+<tr><td>Density map</td><td>pydeck hexagon aggregation for up to 200,000 points</td><td>coordinates</td><td><span class="later">Stage 5</span></td></tr>
+<tr><td>Point clusters</td><td>HDBSCAN using haversine distance</td><td>≥ 30 points</td><td><span class="later">Stage 5</span></td></tr>
+<tr><td>Aggregation by district or city</td><td>point-in-polygon using boundaries from <code>wilayah_idn.json</code> (geoBoundaries)</td><td>points in Indonesia</td><td><span class="later">Stage 5</span></td></tr>
+<tr><td>Earthquakes</td><td>Gutenberg–Richter, b-value (Aki estimator), and depth distribution</td><td>≥ 50 earthquakes</td><td><span class="later">Stage 5</span></td></tr>
+</tbody>
+</table>
+</div>
+<div class="family" id="peta-e">
+<div class="family-head"><span class="key">E</span><h3>Country–year panels</h3><span class="tally">Stage 6</span>
+<p class="sources">World Bank, IMF, and OECD indicators by country and year. The series contain too few annual observations for forecasting.</p></div>
+<table class="matrix">
+<thead><tr><th>Analysis</th><th>Method / library</th><th>Requirements</th><th>Status</th></tr></thead>
+<tbody>
+<tr><td>Trends, CAGR, and comparisons</td><td>pandas</td><td>≥ 2 years</td><td><span class="later">Stage 6</span></td></tr>
+<tr><td>Correlation between indicators</td><td>Pearson / Spearman</td><td>≥ 2 indicators</td><td><span class="later">Stage 6</span></td></tr>
+<tr><td>Country clusters</td><td>k-means on standardized indicators</td><td>≥ 5 countries</td><td><span class="later">Stage 6</span></td></tr>
+<tr><td>Fixed-effects panel regression</td><td><code>linearmodels</code></td><td>≥ 2 indicators, ≥ 3 countries</td><td><span class="later">Stage 6</span></td></tr>
+</tbody>
+</table>
+</div>
+<div class="family" id="peta-g">
+<div class="family-head"><span class="key">G</span><h3>Bibliometrics</h3><span class="tally">Stage 7</span>
+<p class="sources">Google Scholar and SINTA authors, publications, and citations.</p></div>
+<table class="matrix">
+<thead><tr><th>Analysis</th><th>Method / library</th><th>Requirements</th><th>Status</th></tr></thead>
+<tbody>
+<tr><td>Coauthor network</td><td>NetworkX using the <code>authors</code> Google Scholar</td><td>≥ 10 publications</td><td><span class="later">Stage 7</span></td></tr>
+<tr><td>Citations per year and topics in titles</td><td>pandas, NMF</td><td></td><td><span class="later">Stage 7</span></td></tr>
+<tr><td>h-index and citations by study program, Scopus vs. Google Scholar</td><td>pandas</td><td>SINTA profiles</td><td><span class="later">Stage 7</span></td></tr>
+</tbody>
+</table>
+<p class="note"><b>Note:</b> SINTA returns a changing sample of 10 documents per author. Document-level analysis requires a more complete list.</p>
+</div>
+<div class="family" id="peta-lintas">
+<div class="family-head"><span class="key">+</span><h3>Across datasets</h3><span class="tally">After G</span>
+<p class="sources">Two datasets aligned by date and, where available, by region.</p></div>
+<p style="max-width: 72ch">Lagged correlations and Granger causality tests with statsmodels. Planned comparisons cover food prices and weather, disasters or earthquakes and news volume, then stock prices and news sentiment.</p>
+<p class="note"><b>Note:</b> correlation alone cannot establish causation. Results include this qualification.</p>
+</div>
+</section>
+<section>
+<h2>Method references</h2>
+<ol class="refs">
+<li>Wilie, B. et al. (2020). IndoNLU: Benchmark and Resources for Evaluating Indonesian Natural Language Understanding. AACL-IJCNLP.</li>
+<li>Liu, Y. et al. (2019). RoBERTa: A Robustly Optimized BERT Pretraining Approach. arXiv:1907.11692.</li>
+<li>Pedregosa, F. et al. (2011). Scikit-learn: Machine Learning in Python. JMLR 12.</li>
+<li>Cohen, J. (1960). A coefficient of agreement for nominal scales. Educational and Psychological Measurement 20(1).</li>
+<li>Monroe, B. L., Colaresi, M. P., &amp; Quinn, K. M. (2008). Fightin' Words. Political Analysis 16(4).</li>
+<li>Grootendorst, M. (2022). BERTopic: Neural topic modeling with a class-based TF-IDF procedure. arXiv:2203.05794.</li>
+<li>Hyndman, R. J., &amp; Athanasopoulos, G. (2021). Forecasting: Principles and Practice (3rd ed.). OTexts.</li>
+<li>Bollerslev, T. (1986). Generalized autoregressive conditional heteroskedasticity. Journal of Econometrics 31(3).</li>
+<li>Campello, R., Moulavi, D., &amp; Sander, J. (2013). Density-based clustering based on hierarchical density estimates. PAKDD.</li>
+<li>Aki, K. (1965). Maximum likelihood estimate of b in the formula log N = a − bM. Bull. Earthquake Research Institute 43.</li>
+<li>Granger, C. W. J. (1969). Investigating causal relations by econometric models and cross-spectral methods. Econometrica 37(3).</li>
+</ol>
+</section>
+</div>
+</div>

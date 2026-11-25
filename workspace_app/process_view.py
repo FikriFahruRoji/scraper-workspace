@@ -4,6 +4,8 @@ import re
 
 import streamlit as st
 
+from workspace_app.i18n import tr
+
 from workspace_app import ui
 from workspace_app.sources import label
 
@@ -27,12 +29,12 @@ def elapsed(started):
 
 
 def process_page(manager):
-    ui.page_header("Proses Berjalan", "Pantau pekerjaan yang sedang berjalan, lengkap dengan lognya")
+    ui.page_header(tr("Proses Berjalan"), tr("Pantau pekerjaan yang sedang berjalan, lengkap dengan lognya"))
     live(manager)
 
 
 def stop_button(manager, stopping):
-    if st.button("Hentikan", icon=":material/stop_circle:", disabled=stopping, key="process-stop"):
+    if st.button(tr("Hentikan"), icon=":material/stop_circle:", disabled=stopping, key="process-stop"):
         manager.stop()
         st.rerun()
 
@@ -49,9 +51,9 @@ def live(manager):
         with st.container(key="panel-process"):
             st.markdown(f"**{name}**")
             if active["stopping"]:
-                st.badge("Sedang menghentikan", icon=":material/pause_circle:", color="orange")
+                st.badge(tr("Sedang menghentikan"), icon=":material/pause_circle:", color="orange")
             else:
-                st.badge("Login di jendela browser", icon=":material/login:", color="blue")
+                st.badge(tr("Login di jendela browser"), icon=":material/login:", color="blue")
             stop_button(manager, active["stopping"])
         return
     job = manager.get(active["id"])
@@ -60,27 +62,27 @@ def live(manager):
         with st.container(horizontal=True, vertical_alignment="center"):
             st.markdown(f"**{job['project'] or name}**")
             if active["stopping"]:
-                st.badge("Sedang menghentikan", icon=":material/pause_circle:", color="orange")
+                st.badge(tr("Sedang menghentikan"), icon=":material/pause_circle:", color="orange")
             else:
                 ui.status_badge("running")
-        st.caption(f"{name} · mulai {ui.long_date(job['started'])}")
+        st.caption(tr('{0} · mulai {1}', name, ui.long_date(job['started'])))
 
         cols = st.columns(2)
-        cols[0].metric("Baris tersimpan", ui.fmt(manager.saved_count(active["id"])), border=True)
-        cols[1].metric("Sudah berjalan", elapsed(job["started"]), border=True)
+        cols[0].metric(tr("Baris tersimpan"), ui.fmt(manager.saved_count(active["id"])), border=True)
+        cols[1].metric(tr("Sudah berjalan"), elapsed(job["started"]), border=True)
         if progress := progress_from_logs(logs):
             done, total = progress
-            st.progress(done / total, text=f"{ui.fmt(done)} dari {ui.fmt(total)} baris diproses")
+            st.progress(done / total, text=tr('{0} dari {1} baris diproses', ui.fmt(done), ui.fmt(total)))
 
-        st.markdown("**Log proses**")
+        st.markdown(tr("**Log proses**"))
         if logs:
             st.code("\n".join(logs[-60:]), language="text", height=260)
-            st.caption("Menampilkan 60 pesan terakhir. Halaman ini diperbarui tiap detik.")
+            st.caption(tr("Menampilkan 60 pesan terakhir. Halaman ini diperbarui tiap detik."))
         else:
-            st.caption("Menyiapkan proses… log pertama akan muncul sebentar lagi.")
+            st.caption(tr("Menyiapkan proses… log pertama akan muncul sebentar lagi."))
         stop_button(manager, active["stopping"])
-        if active["source"] in ("preprocessing", "sentimen"):
-            st.caption("Data yang sudah selesai diproses tetap disimpan bila proses dihentikan.")
+        if active["source"] in ("preprocessing", "sentimen", "emosi"):
+            st.caption(tr("Data yang sudah selesai diproses tetap disimpan bila proses dihentikan."))
 
 
 def finished(manager):
@@ -88,27 +90,32 @@ def finished(manager):
     last = st.session_state.get("proc-last")
     job = manager.get(last) if last else None
     if not job:
-        st.info("Tidak ada proses yang berjalan sekarang.", icon=":material/check_circle:")
-        st.page_link(ui.PAGES["preprocessing"], label="Buka Preprocessing Data", icon=":material/filter_alt:")
+        st.info(tr("Tidak ada proses yang berjalan sekarang."), icon=":material/check_circle:")
+        st.page_link(ui.pages()["preprocessing"], label=tr("Buka Preprocessing Data"), icon=":material/filter_alt:")
         return
     with st.container(key="panel-process"):
         with st.container(horizontal=True, vertical_alignment="center"):
             st.markdown(f"**{job['project'] or label(job['source'])}**")
             ui.status_badge(job["status"])
-        st.caption(f"{label(job['source'])} · {ui.long_date(job['started'])} · "
-                   f"durasi {ui.duration(job['started'], job['finished'])} · {ui.fmt(job['count'])} baris tersimpan")
+        st.caption(tr('{0} · {1} · durasi {2} · {3} baris tersimpan', label(job['source']), ui.long_date(job['started']), ui.duration(job['started'], job['finished']), ui.fmt(job['count'])))
         if job["message"]:
             (st.error if job["status"] == "failed" else st.warning)(ui.friendly(job["message"]),
                                                                     icon=":material/warning:")
         logs = manager.logs(last)
-        with st.expander("Log proses", expanded=job["status"] in ("failed", "partial"), icon=":material/terminal:"):
+        with st.expander(tr("Log proses"), expanded=job["status"] in ("failed", "partial"), icon=":material/terminal:"):
             if logs:
                 st.code("\n".join(logs[-60:]), language="text", height=240)
             else:
-                st.caption("Belum ada log tersimpan.")
+                st.caption(tr("Belum ada log tersimpan."))
         if job["source"] == "preprocessing":
-            st.page_link(ui.PAGES["pp-dataset"], label="Buka Dataset Preprocessing", icon=":material/filter_alt:")
-        elif job["source"] == "sentimen" and "sentimen" in ui.PAGES:
-            st.page_link(ui.PAGES["sentimen"], label="Lihat hasil sentimen", icon=":material/sentiment_satisfied:")
+            st.page_link(ui.pages()["pp-dataset"], label=tr("Buka Dataset Preprocessing"), icon=":material/filter_alt:")
+        elif job["source"] in ("sentimen", "emosi") and job["source"] in ui.pages():
+            if job["source"] == "sentimen":
+                st.page_link(ui.pages()["sentimen"], label=tr("Lihat hasil sentimen"),
+                             icon=":material/sentiment_satisfied:")
+            else:
+                st.page_link(ui.pages()["emosi"], label=tr("Lihat hasil emosi dan toksisitas"), icon=":material/mood:")
+            if "hasil" in ui.pages():
+                st.page_link(ui.pages()["hasil"], label=tr("Buka Hasil Analisis"), icon=":material/inventory_2:")
         else:
-            st.page_link(ui.PAGES["dataset"], label="Buka Dataset", icon=":material/folder:")
+            st.page_link(ui.pages()["dataset"], label=tr("Buka Dataset"), icon=":material/folder:")

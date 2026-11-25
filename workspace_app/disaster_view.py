@@ -4,6 +4,8 @@ from datetime import date
 import pandas as pd
 import streamlit as st
 
+from workspace_app.i18n import tr
+
 SOURCES = ("bencana",)
 NAMES = {"bencana": "Bencana (GDACS & NASA EONET)"}
 REGIONS = {
@@ -31,7 +33,7 @@ def _day(value):
 def _types_text(params):
     names = _scraper().TYPES
     picked = params.get("types") or []
-    return ", ".join(names[k][0] for k in picked if k in names) if len(picked) < len(names) else "semua jenis"
+    return ", ".join(names[k][0] for k in picked if k in names) if len(picked) < len(names) else tr("semua jenis")
 
 
 def _period(params):
@@ -46,25 +48,25 @@ def form(source):
     from workspace_app.views import _initial, _key, choice, date_bounds, number, time_limit
 
     scraper = _scraper()
-    region = choice("Wilayah", REGIONS, key=_key(source, "region"))
-    provider = choice("Sumber data", PROVIDERS, key=_key(source, "provider"))
+    region = choice(tr("Wilayah"), REGIONS, key=_key(source, "region"))
+    provider = choice(tr("Sumber data"), PROVIDERS, key=_key(source, "provider"))
     available = [k for k, (_, gdacs, eonet) in scraper.TYPES.items()
                  if (provider != "gdacs" or gdacs) and (provider != "eonet" or eonet)]
     key = _key(source, f"types-{provider}")
-    types = st.multiselect("Jenis bencana", available, key=key, format_func=lambda k: scraper.TYPES[k][0],
+    types = st.multiselect(tr("Jenis bencana"), available, key=key, format_func=lambda k: tr(scraper.TYPES[k][0]),
                            **_initial(key, available, "default"),
-                           help="Gempa tidak termasuk; pakai sumber Gempa (USGS).")
+                           help=tr("Gempa tidak termasuk; pakai sumber Gempa (USGS)."))
     min_alert = "green"
     if provider != "eonet":
-        min_alert = st.selectbox("Level peringatan GDACS minimum", list(ALERTS), key=_key(source, "alert"),
-                                 format_func=ALERTS.get,
-                                 help="Hijau: dampak kecil. Oranye: sedang. Merah: besar. EONET tidak punya level peringatan.")
+        min_alert = st.selectbox(tr("Level peringatan GDACS minimum"), list(ALERTS), key=_key(source, "alert"),
+                                 format_func=lambda key: tr(ALERTS[key]),
+                                 help=tr("Hijau: dampak kecil. Oranye: sedang. Merah: besar. EONET tidak punya level peringatan."))
     start, end = date_bounds(source, days=365)
-    limit = number(source, "count", "Jumlah kejadian maksimum", 0, 100_000, 0, step=100,
-                   help="0 mengambil semua kejadian yang ditemukan dalam batas waktu.")
-    st.caption("Data: GDACS (gdacs.org, PBB dan Komisi Eropa) dan NASA EONET, publik tanpa kunci. Siklon yang tidak "
+    limit = number(source, "count", tr("Jumlah kejadian maksimum"), 0, 100_000, 0, step=100,
+                   help=tr("0 mengambil semua kejadian yang ditemukan dalam batas waktu."))
+    st.caption(tr("Data: GDACS (gdacs.org, PBB dan Komisi Eropa) dan NASA EONET, publik tanpa kunci. Siklon yang tidak "
                "menyentuh daratan Indonesia tidak ikut di wilayah Indonesia versi GDACS. Provinsi dan kabupaten/kota "
-               "ditentukan dari titik kejadian (batas BPS 2020, 38 provinsi). Waktu ditulis dalam WIB dan UTC.")
+               "ditentukan dari titik kejadian (batas BPS 2020, 38 provinsi). Waktu ditulis dalam WIB dan UTC."))
     return {"region": region, "provider": provider, "types": types, "min_alert": min_alert,
             "start_date": start, "end_date": end, "count": limit, "max_minutes": time_limit(source)}
 
@@ -73,49 +75,49 @@ def check(params, source="bencana"):
     """Raise ValueError with a plain message when the form cannot be run."""
     scraper = _scraper()
     if params.get("region") not in REGIONS:
-        raise ValueError("Wilayah tidak dikenali.")
+        raise ValueError(tr("Wilayah tidak dikenali."))
     if params.get("provider") not in PROVIDERS:
-        raise ValueError("Sumber data tidak dikenali.")
+        raise ValueError(tr("Sumber data tidak dikenali."))
     if params.get("min_alert", "green") not in ALERTS:
-        raise ValueError("Level peringatan tidak dikenali.")
+        raise ValueError(tr("Level peringatan tidak dikenali."))
     types = params.get("types") or []
     if not types:
-        raise ValueError("Pilih minimal satu jenis bencana.")
+        raise ValueError(tr("Pilih minimal satu jenis bencana."))
     if any(k not in scraper.TYPES for k in types):
-        raise ValueError("Jenis bencana tidak dikenali.")
+        raise ValueError(tr("Jenis bencana tidak dikenali."))
     column = {"gdacs": 1, "eonet": 2}.get(params["provider"])
     if column and not any(scraper.TYPES[k][column] for k in types):
-        raise ValueError(f"Jenis yang dipilih tidak tersedia di {PROVIDERS[params['provider']][0]}.")
+        raise ValueError(tr('Jenis yang dipilih tidak tersedia di {0}.', PROVIDERS[params['provider']][0]))
     if not (params.get("start_date") and params.get("end_date")):
-        raise ValueError("Pilih tanggal mulai dan selesai.")
+        raise ValueError(tr("Pilih tanggal mulai dan selesai."))
     start, end = _day(params["start_date"]), _day(params["end_date"])
     if start > end:
-        raise ValueError("Tanggal mulai harus sebelum tanggal selesai.")
+        raise ValueError(tr("Tanggal mulai harus sebelum tanggal selesai."))
     if end > date.today():
-        raise ValueError("Tanggal selesai tidak boleh melewati hari ini.")
+        raise ValueError(tr("Tanggal selesai tidak boleh melewati hari ini."))
     if start < scraper.FIRST_DAY:
-        raise ValueError("Arsip GDACS dan EONET dipakai mulai tahun 2000.")
+        raise ValueError(tr("Arsip GDACS dan EONET dipakai mulai tahun 2000."))
     if (end - start).days > MAX_DAYS:
-        raise ValueError("Pilih paling lama 10 tahun per pengambilan.")
+        raise ValueError(tr("Pilih paling lama 10 tahun per pengambilan."))
 
 
 def summary(source, params):
-    rows = [("Sumber", NAMES[source]), ("Wilayah", REGIONS.get(params.get("region"), ("-",))[0]),
-            ("Data dari", PROVIDERS.get(params.get("provider"), ("-",))[0]), ("Jenis", _types_text(params)),
+    rows = [("Sumber", tr(NAMES[source])), ("Wilayah", tr(REGIONS.get(params.get("region"), ("-",))[0])),
+            ("Data dari", tr(PROVIDERS.get(params.get("provider"), ("-",))[0])), ("Jenis", _types_text(params)),
             ("Periode", _period(params))]
     if params.get("provider") != "eonet":
-        rows.append(("Peringatan", ALERTS.get(params.get("min_alert", "green"), "-")))
-    rows.append(("Batas data", f"{params['count']:,}".replace(",", ".") if params.get("count") else "Semua yang ditemukan"))
+        rows.append(("Peringatan", tr(ALERTS.get(params.get("min_alert", "green"), "-"))))
+    rows.append(("Batas data", f"{params['count']:,}".replace(",", ".") if params.get("count") else tr("Semua yang ditemukan")))
     return rows
 
 
 def method_rows(job):
     """Rows describing how the job collected its data, for the dataset dialog."""
     params = job["params"]
-    return [("Wilayah", REGIONS.get(params.get("region"), ("-",))[0]),
-            ("Data dari", PROVIDERS.get(params.get("provider"), ("-",))[0]),
+    return [("Wilayah", tr(REGIONS.get(params.get("region"), ("-",))[0])),
+            ("Data dari", tr(PROVIDERS.get(params.get("provider"), ("-",))[0])),
             ("Jenis", _types_text(params)), ("Periode", _period(params)),
-            ("Peringatan minimum", ALERTS.get(params.get("min_alert", "green"), "-"))]
+            ("Peringatan minimum", tr(ALERTS.get(params.get("min_alert", "green"), "-")))]
 
 
 def seed(source, params):
@@ -143,21 +145,21 @@ def hints(job):
 def chart(frame, source="bencana"):
     """Counts per type and month, and a map of the events."""
     if not {"jenis", "lintang", "bujur"} <= set(frame):
-        st.metric("Baris", len(frame))
+        st.metric(tr("Baris"), len(frame))
         return
     cols = st.columns(3)
-    cols[0].metric("Kejadian", f"{len(frame):,}".replace(",", "."), border=True)
-    cols[1].metric("Jenis terbanyak", frame["jenis"].mode().iat[0] if len(frame) else "-", border=True)
+    cols[0].metric(tr("Kejadian"), f"{len(frame):,}".replace(",", "."), border=True)
+    cols[1].metric(tr("Jenis terbanyak"), frame["jenis"].mode().iat[0] if len(frame) else "-", border=True)
     if "peringatan" in frame:
-        cols[2].metric("Peringatan oranye/merah", int(frame["peringatan"].isin(["oranye", "merah"]).sum()), border=True)
+        cols[2].metric(tr("Peringatan oranye/merah"), int(frame["peringatan"].isin(["oranye", "merah"]).sum()), border=True)
     st.bar_chart(frame["jenis"].value_counts().rename_axis("jenis").rename("kejadian"), horizontal=True)
     if "provinsi" in frame and (frame["provinsi"].fillna("") != "").any():
         provinces = frame.loc[frame["provinsi"].fillna("") != ""]
         st.bar_chart(provinces.pivot_table(index="provinsi", columns="jenis", values="id_kejadian", aggfunc="count",
                                            fill_value=0).assign(total=lambda t: t.sum(axis=1))
                      .nlargest(15, "total").drop(columns="total"), horizontal=True)
-        st.caption("15 provinsi dengan kejadian terbanyak. Provinsi dan kabupaten/kota ditentukan dari lintang dan "
-                   "bujur titik kejadian.")
+        st.caption(tr("15 provinsi dengan kejadian terbanyak. Provinsi dan kabupaten/kota ditentukan dari lintang dan "
+                   "bujur titik kejadian."))
     if "mulai_wib" in frame:
         months = pd.to_datetime(frame["mulai_wib"].str[:7], format="%Y-%m", errors="coerce")
         table = frame.assign(bulan=months.dt.to_period("M").astype(str)).dropna(subset=["bulan"])

@@ -249,3 +249,43 @@ def test_date_columns_skip_numbers_stored_as_text():
                           "tahun": ["2020", "2021"]})
     assert an.date_columns(frame) == ["waktu", "tahun"]
     assert an.parse_dates(pd.Series(["-6.2"])).isna().all()
+
+
+def test_analysis_results_page_lists_only_saved_analyses(tmp_path):
+    from pathlib import Path
+    from streamlit.testing.v1 import AppTest
+
+    manager = JobManager(tmp_path)
+    manager.start_sentiment({"masukan": {"sumber": "playstore", "proyek": "Ulasan"}, "kolom": ["ulasan"]},
+                            reviews(10), ["ulasan"], {"rating_column": "rating"}, project="Uji sentimen",
+                            classifier=FakeClassifier())
+    wait(manager)
+    script = tmp_path / "page.py"
+    script.write_text(f"import sys\nsys.path.insert(0, {str(Path(__file__).resolve().parents[1])!r})\n"
+                      "import streamlit as st\nfrom workspace_app.studio import analysis_results_page\n"
+                      "analysis_results_page(st.session_state['manager'])\n")
+    at = AppTest.from_file(str(script), default_timeout=60)
+    at.session_state["manager"] = manager
+    at.run()
+    assert not at.exception
+    assert at.title[0].value == "Hasil Analisis"
+    assert sum(b.label == "Buka" for b in at.button) == 1
+    next(b for b in at.button if b.label == "Buka").click().run()
+    assert not at.exception
+    assert {b.label for b in at.get("download_button")} >= {"Unduh Excel", "Unduh CSV"}
+
+
+def test_analysis_results_page_empty_state(tmp_path):
+    from pathlib import Path
+    from streamlit.testing.v1 import AppTest
+
+    manager = JobManager(tmp_path)
+    script = tmp_path / "page.py"
+    script.write_text(f"import sys\nsys.path.insert(0, {str(Path(__file__).resolve().parents[1])!r})\n"
+                      "import streamlit as st\nfrom workspace_app.studio import analysis_results_page\n"
+                      "analysis_results_page(st.session_state['manager'])\n")
+    at = AppTest.from_file(str(script), default_timeout=60)
+    at.session_state["manager"] = manager
+    at.run()
+    assert not at.exception
+    assert "Belum ada hasil analisis" in at.info[0].value

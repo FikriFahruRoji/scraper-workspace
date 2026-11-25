@@ -4,9 +4,11 @@ from pathlib import Path
 
 import streamlit as st
 
+from workspace_app.i18n import language_selector, tr
+
 from workspace_app import ui
 from workspace_app.activity import activity
-from workspace_app.analysis_view import PAGES as ANALYSES, page_for
+from workspace_app.analysis_view import EXPLORATION, PAGES as ANALYSES, page_for
 from workspace_app.jobs import JobManager, local_directory
 from workspace_app.preprocess_view import preprocessing_page
 from workspace_app.sources import LABELS, label
@@ -15,7 +17,8 @@ from workspace_app.info_view import info_page
 from workspace_app.process_view import process_page
 from workspace_app.recommend_view import recommend_page
 from workspace_app.sentiment_view import sentiment_page
-from workspace_app.studio import dataset_page, preprocessing_dataset_page, scraping_page
+from workspace_app.emotion_view import emotion_page
+from workspace_app.studio import analysis_results_page, dataset_page, preprocessing_dataset_page, scraping_page
 from workspace_app.views import source_page
 
 RESOURCES = Path(__file__).resolve().parent / "workspace_app" / "resources"
@@ -24,6 +27,7 @@ st.set_page_config(page_title="nOCturnal Scraper", page_icon=str(RESOURCES / "ic
 # not above the page content.
 with st.sidebar:
     ui.inject_css()
+    language_selector()
 st.logo(str(RESOURCES / "blank.svg"), size="large")
 
 
@@ -39,42 +43,52 @@ except RuntimeError as exc:
     st.stop()
 
 
-dataset = st.Page(partial(dataset_page, manager), title="Dataset", icon=":material/folder:",
-                  url_path="dataset", default=True)
-scraping = st.Page(partial(scraping_page, manager), title="Lakukan Scraping", icon=":material/travel_explore:",
-                   url_path="scraping")
-merge = st.Page(partial(merge_page, manager), title="Gabungkan Data", icon=":material/merge:", url_path="gabungkan")
-preprocessing = st.Page(partial(preprocessing_page, manager), title="Preprocessing Data",
+dataset = st.Page(partial(dataset_page, manager), title=tr("Dataset"), icon=":material/folder:",
+                  url_path="dataset")
+scraping = st.Page(partial(scraping_page, manager), title=tr("Lakukan Scraping"), icon=":material/travel_explore:",
+                   url_path="scraping", default=True)
+merge = st.Page(partial(merge_page, manager), title=tr("Gabungkan Data"), icon=":material/merge:", url_path="gabungkan")
+preprocessing = st.Page(partial(preprocessing_page, manager), title=tr("Preprocessing Data"),
                         icon=":material/filter_alt:", url_path="preprocessing")
 _running, _ = manager.snapshot()
 running = st.Page(partial(process_page, manager), icon=":material/progress_activity:", url_path="proses-berjalan",
-                  title="Proses Berjalan" + (" ●" if _running else ""))
-pp_dataset = st.Page(partial(preprocessing_dataset_page, manager), title="Dataset Preprocessing",
+                  title=tr("Proses Berjalan") + (" ●" if _running else ""))
+pp_dataset = st.Page(partial(preprocessing_dataset_page, manager), title=tr("Dataset Preprocessing"),
                      icon=":material/dataset:", url_path="dataset-preprocessing")
-analyses = {key: st.Page(page_for(manager, key), title=title, icon=icon, url_path=f"analisis-{key}")
+analyses = {key: st.Page(page_for(manager, key), title=tr(title), icon=icon, url_path=f"analisis-{key}")
             for key, (icon, title, _) in ANALYSES.items()}
-recommend = st.Page(partial(recommend_page, manager), title="Rekomendasi Analisis", icon=":material/recommend:",
+recommend = st.Page(partial(recommend_page, manager), title=tr("Rekomendasi Analisis"), icon=":material/recommend:",
                     url_path="analisis")
-info = st.Page(info_page, title="Info", icon=":material/info:", url_path="info")
-sentiment = st.Page(partial(sentiment_page, manager), title="Sentimen", icon=":material/sentiment_satisfied:",
+results = st.Page(partial(analysis_results_page, manager), title=tr("Hasil Analisis"), icon=":material/inventory_2:",
+                   url_path="hasil-analisis")
+info = st.Page(info_page, title=tr("Peta Analisis"), icon=":material/map:", url_path="info")
+sentiment = st.Page(partial(sentiment_page, manager), title=tr("Sentimen"), icon=":material/sentiment_satisfied:",
                     url_path="analisis-sentimen")
+emotion = st.Page(partial(emotion_page, manager), title=tr("Emosi & Toksisitas"), icon=":material/mood:",
+                  url_path="analisis-emosi")
 # Source forms are opened from "Lakukan Scraping", so they stay out of the menu.
-forms = {key: st.Page(partial(source_page, manager, key), title=name, url_path=key, visibility="hidden")
+forms = {key: st.Page(partial(source_page, manager, key), title=tr(name), url_path=key, visibility="hidden")
          for key, name in LABELS.items()}
-ui.PAGES.update(forms, dataset=dataset, scraping=scraping, gabungkan=merge, preprocessing=preprocessing,
+st.session_state["workspace-pages"] = {}
+ui.pages().update(forms, dataset=dataset, scraping=scraping, gabungkan=merge, preprocessing=preprocessing,
                 berjalan=running)
-ui.PAGES["pp-dataset"] = pp_dataset
-ui.PAGES.update({f"analisis-{key}": page for key, page in analyses.items()}, rekomendasi=recommend, sentimen=sentiment)
+ui.pages()["pp-dataset"] = pp_dataset
+ui.pages().update({f"analisis-{key}": page for key, page in analyses.items()}, rekomendasi=recommend, sentimen=sentiment,
+                emosi=emotion, hasil=results)
 
 with st.sidebar:
     with st.container(key="sidebar-bottom"):
         with st.container(key="sidebar-footer"):
-            st.caption("Stealth Scraping by Fikri Fahru Roji")
+            st.caption(tr("Stealth Scraping by Fikri Fahru Roji"))
 
-page = st.navigation({"Data": [dataset, scraping, *forms.values()],
-               "Preprocessing": [merge, preprocessing, running, pp_dataset],
-               "Analisis": [recommend, sentiment, *analyses.values()],
-               "Info": [info]})
+# Grouped by the stages of a study, each stage's action above the list of what it produced.
+# Running jobs span every stage, so they sit with the reference page at the bottom.
+page = st.navigation({tr("Pengumpulan"): [scraping, dataset, *forms.values()],
+                      tr("Persiapan"): [merge, preprocessing, pp_dataset],
+                      tr("Eksplorasi"): [analyses[key] for key in EXPLORATION],
+                      tr("Analisis"): [recommend, sentiment, emotion,
+                                       *(page for key, page in analyses.items() if key not in EXPLORATION), results],
+                      tr("Lainnya"): [running, info]}, expanded=True)
 # Source forms show the running job under their own start button; other pages show it at the top.
 if page.url_path not in forms and page.url_path != "proses-berjalan":
     activity(manager)
