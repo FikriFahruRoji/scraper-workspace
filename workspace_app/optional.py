@@ -6,6 +6,8 @@ GROUPS = {
     "topic": ("torch", "transformers", "huggingface_hub", "safetensors", "sentence_transformers", "bertopic",
               "umap", "hdbscan"),
     "timeseries": ("statsforecast", "statsmodels", "arch", "holidays"),
+    "panel": ("linearmodels",),
+    "cross": ("statsmodels",),
 }
 INSTALL_COMMAND = "pip install -r requirements-analysis.txt"
 

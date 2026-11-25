@@ -20,3 +20,5 @@ statsforecast>=2.0
 statsmodels>=0.14.5
 arch>=7.0
 holidays>=0.60
+# Panel negara-tahun (halaman Panel Negara): regresi panel efek tetap.
+linearmodels>=6.0

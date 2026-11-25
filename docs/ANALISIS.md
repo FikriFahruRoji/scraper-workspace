@@ -4,10 +4,11 @@ Dokumen ini adalah kontrak fitur Analisis di nOCturnal Scraper: dataset apa
 cocok dengan analisis apa, memakai library gratis apa, dan dengan syarat data
 apa. Semua berjalan di komputer pengguna, tanpa token dan tanpa LLM.
 
-Status: **Tahap 1** (hub Rekomendasi Analisis + keluarga A Ulasan) dan
+Status: **Tahap 1** (hub Rekomendasi Analisis + keluarga A Ulasan),
 **Tahap 2** (keluarga B Media sosial), **Tahap 3** (keluarga C Berita, kecuali entitas bernama),
-dan **Tahap 4** (keluarga D Deret waktu), dan **Tahap 5** (keluarga F Geospasial) sudah dibangun. Keluarga lain
-menyusul berurutan E → G → Lintas.
+**Tahap 4** (keluarga D Deret waktu), **Tahap 5** (keluarga F Geospasial),
+**Tahap 6** (keluarga E Panel negara-tahun), **Tahap 7** (keluarga G Bibliometrik), dan
+**Tahap 8** (Lintas dataset) sudah dibangun.
 
 ## Prinsip
 
@@ -112,12 +113,12 @@ mensyaratkan pandas < 3, jadi memasangnya menurunkan pandas ke 2.x; seluruh tes 
 
 Titik tahunan sedikit, jadi **tanpa forecast**.
 
-| Analisis | Metode / library | Syarat |
-|---|---|---|
-| Tren, CAGR, perbandingan antarnegara | pandas | ≥ 2 tahun |
-| Korelasi antarindikator | Pearson / Spearman | ≥ 2 indikator |
-| Klaster negara | k-means pada indikator terstandardisasi (scikit-learn) | ≥ 5 negara |
-| Regresi panel efek tetap | `linearmodels` (NCSA) | ≥ 2 indikator dan ≥ 3 negara |
+| Analisis | Metode / library | Syarat | Status |
+|---|---|---|---|
+| Tren, CAGR, perbandingan antarnegara | pandas | ≥ 2 tahun | Tahap 6 |
+| Korelasi antarindikator | Pearson / Spearman | ≥ 2 indikator | Tahap 6 |
+| Klaster negara | k-means pada indikator terstandardisasi (scikit-learn) | ≥ 5 negara | Tahap 6 |
+| Regresi panel efek tetap | `linearmodels` (NCSA) | ≥ 2 indikator dan ≥ 3 negara | Tahap 6 |
 
 ### F. Kejadian geospasial — USGS, NASA FIRMS, Bencana, Google Maps Lokasi
 
@@ -136,11 +137,11 @@ Tidak ada paket baru: pydeck ikut Streamlit, HDBSCAN dan KD-tree dari scikit-lea
 
 ### G. Bibliometrik — Google Scholar, SINTA
 
-| Analisis | Metode / library | Syarat |
-|---|---|---|
-| Jaringan co-author | networkx dari kolom `authors` Google Scholar | ≥ 10 publikasi |
-| Sitasi per tahun, topik judul | pandas, NMF | — |
-| Sebaran h-index dan sitasi per prodi/afiliasi, Scopus vs GS | pandas | data profil SINTA |
+| Analisis | Metode / library | Syarat | Status |
+|---|---|---|---|
+| Jaringan co-author | networkx dari kolom `authors` Google Scholar | ≥ 10 publikasi | Tahap 7 |
+| Sitasi per tahun, topik judul | pandas, NMF | — | Tahap 7 |
+| Sebaran h-index dan sitasi per prodi/afiliasi, Scopus vs GS | pandas | data profil SINTA | Tahap 7 |
 
 Daftar dokumen SINTA hanya sampel 10 dokumen per penulis dan isinya berubah,
 sehingga analisis tingkat dokumen SINTA **tidak** ditawarkan.

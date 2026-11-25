@@ -21,6 +21,9 @@ from workspace_app.emotion_view import emotion_page
 from workspace_app.topics_view import topics_page
 from workspace_app.series_view import series_page
 from workspace_app.geo_view import geo_page
+from workspace_app.panel_view import panel_page
+from workspace_app.bibliometrik_view import bibliometrik_page
+from workspace_app.cross_view import cross_page
 from workspace_app.studio import analysis_results_page, dataset_detail_page, dataset_page, preprocessing_dataset_page, scraping_page
 from workspace_app.views import source_page
 
@@ -77,6 +80,12 @@ series = st.Page(partial(series_page, manager), title=tr("Deret Waktu"), icon=":
                  url_path="analisis-deret-waktu")
 geomap = st.Page(partial(geo_page, manager), title=tr("Peta Kejadian"), icon=":material/public:",
                  url_path="analisis-geospasial")
+panel_pg = st.Page(partial(panel_page, manager), title=tr("Panel Negara"), icon=":material/globe_asia:",
+                   url_path="analisis-panel-negara")
+bib_pg = st.Page(partial(bibliometrik_page, manager), title=tr("Bibliometrik"), icon=":material/menu_book:",
+                 url_path="analisis-bibliometrik")
+cross_pg = st.Page(partial(cross_page, manager), title=tr("Lintas Dataset"), icon=":material/compare_arrows:",
+                   url_path="analisis-lintas-dataset")
 # Source forms are opened from "Lakukan Scraping", so they stay out of the menu.
 forms = {key: st.Page(partial(source_page, manager, key), title=tr(name), url_path=key, visibility="hidden")
          for key, name in LABELS.items()}
@@ -85,7 +94,7 @@ ui.pages().update(forms, dataset=dataset, **{"dataset-detail": detail}, scraping
                 berjalan=running)
 ui.pages()["pp-dataset"] = pp_dataset
 ui.pages().update({f"analisis-{key}": page for key, page in analyses.items()}, rekomendasi=recommend, sentimen=sentiment,
-                emosi=emotion, **{"topik-waktu": topics, "deret-waktu": series, "geospasial": geomap}, hasil=results)
+                emosi=emotion, **{"topik-waktu": topics, "deret-waktu": series, "geospasial": geomap, "panel-negara": panel_pg, "bibliometrik": bib_pg, "lintas": cross_pg}, hasil=results)
 
 with st.sidebar:
     with st.container(key="sidebar-bottom"):
@@ -97,7 +106,7 @@ with st.sidebar:
 page = st.navigation({tr("Pengumpulan"): [scraping, dataset, detail, *forms.values()],
                       tr("Persiapan"): [merge, preprocessing, pp_dataset],
                       tr("Eksplorasi"): [analyses[key] for key in EXPLORATION],
-                      tr("Analisis"): [recommend, sentiment, emotion, topics, series, geomap,
+                      tr("Analisis"): [recommend, sentiment, emotion, topics, series, geomap, panel_pg, bib_pg, cross_pg,
                                        *(page for key, page in analyses.items() if key not in EXPLORATION), results],
                       tr("Lainnya"): [running, info]}, expanded=True)
 # Source forms show the running job under their own start button; other pages show it at the top.
